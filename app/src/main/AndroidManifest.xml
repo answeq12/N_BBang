@@ -20,6 +20,7 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        //최현성 이거도 못하네
     </application>
 
 </manifest>
