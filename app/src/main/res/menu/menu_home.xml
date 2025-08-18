@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/action_logout"
+        android:orderInCategory="100"
+        android:title="로그아웃"
+        app:showAsAction="never" />
+
+    <!-- 향후 다른 메뉴 아이템 추가 가능
+    <item
+        android:id="@+id/action_settings"
+        android:title="설정"
+        app:showAsAction="never" />
+    -->
+
+</menu>

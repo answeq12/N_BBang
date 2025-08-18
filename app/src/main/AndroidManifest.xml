@@ -11,24 +11,36 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Nbang_v1">
+
+        <!-- LoginActivity를 LAUNCHER로 변경 -->
         <activity
             android:name=".LoginActivity"
-            android:exported="false" />
-        <activity
-            android:name=".MainActivity"
-            android:exported="true">
+            android:exported="true">  <!-- LAUNCHER는 exported="true" 여야 함 -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
-        <!-- SignUpActivity 추가 -->
+        <!-- MainActivity는 일반 액티비티로 변경 -->
+        <activity
+            android:name=".MainActivity"
+            android:exported="false" />  <!-- exported는 필요에 따라 조정 -->
+
         <activity
             android:name=".SignUpActivity"
             android:exported="false"
-            android:label="회원가입" /> 
+            android:label="회원가입" />
+
+        <activity
+            android:name=".WelcomeActivity"
+            android:exported="false"
+            android:theme="@style/Theme.Nbang_v1" />
+
+        <!-- HomeActivity 추가 -->
+        <activity
+            android:name=".HomeActivity"
+            android:exported="false" /> <!-- exported는 필요에 따라 조정 -->
 
     </application>
 

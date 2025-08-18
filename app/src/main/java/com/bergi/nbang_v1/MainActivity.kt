@@ -2,63 +2,56 @@ package com.bergi.nbang_v1
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
+import android.view.Gravity
 import android.widget.Button
+import android.widget.LinearLayout
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var auth: FirebaseAuth
-    private lateinit var textViewWelcome: TextView
-    private lateinit var buttonLogout: Button
+    private val tag = "MainActivity_DEBUG" // 로그 태그
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        Log.d(tag, "onCreate: MainActivity displayed (fallback).")
 
-        auth = Firebase.auth
+        // 기본 레이아웃 설정 (LinearLayout)
+        val linearLayout = LinearLayout(this)
+        linearLayout.orientation = LinearLayout.VERTICAL
+        linearLayout.gravity = Gravity.CENTER
+        linearLayout.layoutParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.MATCH_PARENT
+        )
+        linearLayout.setPadding(40, 40, 40, 40) // 패딩 추가
 
-        textViewWelcome = findViewById(R.id.textViewWelcome)
-        buttonLogout = findViewById(R.id.buttonLogout)
+        // 메시지 텍스트 뷰
+        val textView = TextView(this)
+        textView.text = "여기는 MainActivity 입니다. HomeActivity가 보여야 합니다. (수정 시도 2)"
+        textView.textSize = 20f
+        textView.gravity = Gravity.CENTER
+        textView.setPadding(0,0,0,40) // 버튼과의 간격
+        linearLayout.addView(textView)
 
-        buttonLogout.setOnClickListener {
-            signOut()
+        // 로그아웃 버튼
+        val logoutButton = Button(this)
+        logoutButton.text = "임시 로그아웃"
+        logoutButton.setOnClickListener {
+            Log.d(tag, "Logout button clicked.")
+            Firebase.auth.signOut()
+            Log.d(tag, "Firebase signOut() called.")
+            val intent = Intent(this, LoginActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            startActivity(intent)
+            Log.d(tag, "Navigating to LoginActivity.")
+            finish()
         }
-    }
+        linearLayout.addView(logoutButton)
 
-    override fun onStart() {
-        super.onStart()
-        val currentUser = auth.currentUser
-        if (currentUser != null) {
-            // 사용자가 로그인되어 있음
-            val welcomeMessage = if (!currentUser.displayName.isNullOrEmpty()) {
-                "환영합니다, ${currentUser.displayName}님!"
-            } else if (!currentUser.email.isNullOrEmpty()) {
-                "로그인됨: ${currentUser.email}"
-            } else {
-                "환영합니다!" // displayName과 email 모두 없는 경우 (이론상 드묾)
-            }
-            textViewWelcome.text = welcomeMessage
-        } else {
-            // 사용자가 로그인되어 있지 않음 -> LoginActivity로 이동
-            Toast.makeText(this, "로그인이 필요합니다.", Toast.LENGTH_SHORT).show()
-            navigateToLogin()
-        }
-    }
-
-    private fun signOut() {
-        auth.signOut()
-        Toast.makeText(this, "로그아웃되었습니다.", Toast.LENGTH_SHORT).show()
-        navigateToLogin()
-    }
-
-    private fun navigateToLogin() {
-        val intent = Intent(this, LoginActivity::class.java)
-        startActivity(intent)
-        finish() // MainActivity를 종료하여 뒤로가기 시 다시 보이지 않도록 함
+        setContentView(linearLayout) // 설정된 LinearLayout을 화면에 표시
     }
 }

@@ -16,6 +16,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.SignInButton
 import com.google.android.gms.common.api.ApiException
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser // FirebaseUser import 추가
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
@@ -25,17 +26,16 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var auth: FirebaseAuth
     private lateinit var emailEditText: EditText
     private lateinit var passwordEditText: EditText
-    // private lateinit var nicknameEditText: EditText // 삭제
     private lateinit var loginButton: Button
     private lateinit var signUpButton: Button
     private lateinit var googleSignInButton: SignInButton
 
     private lateinit var googleSignInClient: GoogleSignInClient
     private lateinit var googleSignInLauncher: ActivityResultLauncher<Intent>
-    private lateinit var signUpLauncher: ActivityResultLauncher<Intent> // SignUpActivity 결과 처리를 위함
+    private lateinit var signUpLauncher: ActivityResultLauncher<Intent>
 
     private val TAG = "LoginActivity"
-    private val WEB_CLIENT_ID = "979223132862-8aiv5g67eklhs2luetcuj9lniiti4kfc.apps.googleusercontent.com"
+    private val WEB_CLIENT_ID = "979223132862-8aiv5g67eklhs2luetcuj9lniiti4kfc.apps.googleusercontent.com" // 실제 Web Client ID로 변경 필요
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,19 +45,16 @@ class LoginActivity : AppCompatActivity() {
 
         emailEditText = findViewById(R.id.editTextEmail)
         passwordEditText = findViewById(R.id.editTextPassword)
-        // nicknameEditText = findViewById(R.id.editTextNickname) // 삭제
         loginButton = findViewById(R.id.buttonLogin)
         signUpButton = findViewById(R.id.buttonSignUp)
         googleSignInButton = findViewById(R.id.buttonGoogleSignIn)
 
-        // Google SignInOptions 설정
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestIdToken(WEB_CLIENT_ID)
             .requestEmail()
             .build()
         googleSignInClient = GoogleSignIn.getClient(this, gso)
 
-        // Google 로그인 결과 처리
         googleSignInLauncher = registerForActivityResult(
             ActivityResultContracts.StartActivityForResult()
         ) { result ->
@@ -79,20 +76,13 @@ class LoginActivity : AppCompatActivity() {
             }
         }
 
-        // SignUpActivity 결과 처리
         signUpLauncher = registerForActivityResult(
             ActivityResultContracts.StartActivityForResult()
         ) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
-                // 회원가입 성공 시 (SignUpActivity에서 auth.signOut() 했으므로 여기서 다시 로그인 필요)
-                // val signedUpUserEmail = result.data?.getStringExtra("USER_EMAIL") // SignUpActivity에서 이메일 전달 시
-                // emailEditText.setText(signedUpUserEmail) // 예: 이메일 필드 자동 채우기
-                // passwordEditText.requestFocus() // 비밀번호 필드에 포커스
                 Toast.makeText(this, "회원가입이 완료되었습니다. 로그인해주세요.", Toast.LENGTH_LONG).show()
             } else {
-                // 회원가입 취소 또는 실패
                 Log.d(TAG, "SignUpActivity cancelled or failed. Result code: ${result.resultCode}")
-                // 필요시 실패 메시지 표시 (SignUpActivity에서 이미 Toast를 띄웠을 수 있음)
             }
         }
 
@@ -101,7 +91,6 @@ class LoginActivity : AppCompatActivity() {
         }
 
         signUpButton.setOnClickListener {
-            // SignUpActivity를 시작한다.
             val intent = Intent(this, SignUpActivity::class.java)
             signUpLauncher.launch(intent)
         }
@@ -130,8 +119,8 @@ class LoginActivity : AppCompatActivity() {
                 if (task.isSuccessful) {
                     val user = auth.currentUser
                     Log.d(TAG, "Google signIn with Firebase: success. User: ${user?.displayName}")
-                    Toast.makeText(this, "Google 로그인 성공! (${user?.displayName ?: user?.email})", Toast.LENGTH_SHORT).show()
-                    navigateToMain()
+                    Toast.makeText(this, "Google 로그인 성공! (${getNicknameForWelcome(user)})", Toast.LENGTH_SHORT).show()
+                    navigateToWelcomeActivity(user) // WelcomeActivity로 이동
                 } else {
                     Log.w(TAG, "Google signIn with Firebase: failure", task.exception)
                     Toast.makeText(this, "Google 로그인 연동 실패: ${task.exception?.message}", Toast.LENGTH_LONG).show()
@@ -139,20 +128,20 @@ class LoginActivity : AppCompatActivity() {
             }
     }
 
-    // createUserWithEmailPassword 함수 삭제 (SignUpActivity로 이동)
-    // updateUserProfile 함수 삭제 (SignUpActivity로 이동)
-
     private fun signInWithEmailPassword(email: String, pass: String) {
         auth.signInWithEmailAndPassword(email, pass)
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
                     Log.d(TAG, "signInWithEmail:success")
+                    val user = auth.currentUser
                     Toast.makeText(baseContext, "로그인 성공!", Toast.LENGTH_SHORT).show()
-                    navigateToMain()
+                    navigateToWelcomeActivity(user) // WelcomeActivity로 이동
                 } else {
                     Log.w(TAG, "signInWithEmail:failure", task.exception)
                     var errorMessage = "로그인 실패: ${task.exception?.message}"
-                    if (task.exception?.message?.contains("INVALID_LOGIN_CREDENTIALS") == true) {
+                    if (task.exception?.message?.contains("INVALID_LOGIN_CREDENTIALS") == true || 
+                        task.exception?.message?.contains("INVALID_PASSWORD") == true ||
+                        task.exception?.message?.contains("USER_NOT_FOUND") == true) { // Firebase 에러 코드에 따라 조정
                          errorMessage = "이메일 또는 비밀번호가 올바르지 않습니다."
                     } else if (task.exception?.message?.contains("USER_DISABLED") == true) {
                         errorMessage = "사용 중지된 계정입니다."
@@ -166,14 +155,27 @@ class LoginActivity : AppCompatActivity() {
         super.onStart()
         val currentUser = auth.currentUser
         if (currentUser != null) {
-            navigateToMain()
+            // 앱 시작 시 자동 로그인 되면 WelcomeActivity로 바로 이동
+            navigateToWelcomeActivity(currentUser)
         }
-        // LoginActivity가 시작될 때는 항상 초기 상태로 시작
     }
 
-    private fun navigateToMain() {
-        val intent = Intent(this, MainActivity::class.java)
+    // 사용자 정보를 받아 닉네임을 WelcomeActivity에 전달하며 이동하는 함수
+    private fun navigateToWelcomeActivity(user: FirebaseUser?) {
+        val nickname = getNicknameForWelcome(user)
+        val intent = Intent(this, WelcomeActivity::class.java).apply {
+            putExtra("NICKNAME", nickname)
+            // WelcomeActivity 이후에는 로그인 화면으로 돌아오지 않도록 스택 정리
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
         startActivity(intent)
-        finish()
+        finish() // LoginActivity 종료
+    }
+
+    // WelcomeActivity에 전달할 닉네임 문자열을 생성하는 도우미 함수
+    private fun getNicknameForWelcome(user: FirebaseUser?): String {
+        return user?.displayName?.takeIf { it.isNotBlank() } // displayName이 비어있지 않으면 사용
+            ?: user?.email?.split('@')?.firstOrNull() // 이메일의 @ 앞부분 사용
+            ?: "사용자" // 둘 다 없으면 "사용자"
     }
 }
