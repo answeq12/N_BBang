@@ -12,6 +12,9 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Nbang_v1">
         <activity
+            android:name=".LoginActivity"
+            android:exported="false" />
+        <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
@@ -20,7 +23,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        //최현성 이거도 못하네
+
+        <!-- SignUpActivity 추가 -->
+        <activity
+            android:name=".SignUpActivity"
+            android:exported="false"
+            android:label="회원가입" /> 
+
     </application>
-//djhfa
+
 </manifest>

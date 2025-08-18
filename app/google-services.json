@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "979223132862",
+    "project_id": "nbbang-b88c0",
+    "storage_bucket": "nbbang-b88c0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:979223132862:android:c94da02314b9a1a7e87cef",
+        "android_client_info": {
+          "package_name": "com.bergi.nbang_v1"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "979223132862-8aiv5g67eklhs2luetcuj9lniiti4kfc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCUhdhfIcwYMkkCrxe8OcAd1Bs4uetlzCI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "979223132862-8aiv5g67eklhs2luetcuj9lniiti4kfc.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
