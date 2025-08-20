@@ -6,20 +6,20 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 
+// 파일 이름은 PostAdapter.kt 입니다.
 class PostAdapter(private val posts: List<Post>) : RecyclerView.Adapter<PostAdapter.PostViewHolder>() {
 
-    // ViewHolder class to hold the views for each item
+    // ViewHolder 클래스가 item_post.xml의 뷰들을 참조하도록 수정합니다.
     class PostViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        val titleTextView: TextView = itemView.findViewById(android.R.id.text1) // Example ID
-        val authorTextView: TextView = itemView.findViewById(android.R.id.text2) // Example ID
+        // android.R.id.text1 대신 item_post.xml에 있는 실제 ID를 사용합니다.
+        val titleTextView: TextView = itemView.findViewById(R.id.textViewPostTitle)
+        val authorTextView: TextView = itemView.findViewById(R.id.textViewPostAuthor)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PostViewHolder {
-        // Inflate the layout for each item
-        // NOTE: You'''ll need to create a layout file for the post item, e.g., R.layout.item_post
-        // For now, using a generic Android layout for simplicity, but this needs to be customized.
+        // android.R.layout.simple_list_item_2 대신 우리가 만든 item_post.xml을 사용하도록 수정합니다.
         val view = LayoutInflater.from(parent.context)
-            .inflate(android.R.layout.simple_list_item_2, parent, false)
+            .inflate(R.layout.item_post, parent, false)
         return PostViewHolder(view)
     }
 

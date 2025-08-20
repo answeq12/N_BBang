@@ -7,17 +7,19 @@
     android:padding="16dp"
     tools:context=".SignUpActivity">
 
+    <!-- 이메일 입력 -->
     <EditText
         android:id="@+id/editTextSignUpEmail"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="150dp"
+        android:layout_marginTop="60dp"
         android:hint="이메일"
         android:inputType="textEmailAddress"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <!-- 닉네임 입력 -->
     <EditText
         android:id="@+id/editTextSignUpNickname"
         android:layout_width="0dp"
@@ -29,6 +31,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/editTextSignUpEmail" />
 
+    <!-- 비밀번호 입력 -->
     <EditText
         android:id="@+id/editTextSignUpPassword"
         android:layout_width="0dp"
@@ -40,6 +43,43 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/editTextSignUpNickname" />
 
+    <!-- 휴대폰 번호 입력 -->
+    <EditText
+        android:id="@+id/editTextPhoneNumber"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
+        android:hint="휴대폰 번호 ('-' 없이 입력)"
+        android:inputType="phone"
+        app:layout_constraintEnd_toStartOf="@+id/buttonSendCode"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/editTextSignUpPassword" />
+
+    <!-- 인증번호 받기 버튼 -->
+    <Button
+        android:id="@+id/buttonSendCode"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:text="인증번호 받기"
+        app:layout_constraintBaseline_toBaselineOf="@+id/editTextPhoneNumber"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/editTextPhoneNumber" />
+
+    <!-- 인증번호 입력 -->
+    <EditText
+        android:id="@+id/editTextVerificationCode"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:hint="인증번호 6자리"
+        android:inputType="numberPassword"
+        android:maxLength="6"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/editTextPhoneNumber" />
+
+    <!-- 최종 가입 완료 버튼 -->
     <Button
         android:id="@+id/buttonConfirmSignUp"
         android:layout_width="0dp"
@@ -48,6 +88,6 @@
         android:text="가입 완료"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/editTextSignUpPassword" />
+        app:layout_constraintTop_toBottomOf="@+id/editTextVerificationCode" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
