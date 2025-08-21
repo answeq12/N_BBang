@@ -4,84 +4,102 @@ import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import com.google.firebase.ktx.Firebase
 
 class HomeActivity : AppCompatActivity() {
 
     private lateinit var auth: FirebaseAuth
-    private lateinit var textViewUserLocation: TextView
-    private lateinit var recyclerViewPosts: RecyclerView
-    private lateinit var fabCreatePost: FloatingActionButton
+    private lateinit var firestore: FirebaseFirestore
 
-    private val tag = "HomeActivity_DEBUG"
+    private lateinit var recyclerViewPosts: RecyclerView
+    private lateinit var postAdapter: PostAdapter
+    private lateinit var fabCreatePost: FloatingActionButton
+    private lateinit var userLocationTextView: TextView
+
+    private val TAG = "HomeActivity_DEBUG"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home)
 
         auth = Firebase.auth
+        firestore = FirebaseFirestore.getInstance()
 
-        // 사용자가 로그인 상태가 아니면 즉시 로그인 화면으로 보냄
-        if (auth.currentUser == null) {
-            navigateToLogin()
+        recyclerViewPosts = findViewById(R.id.recyclerViewPosts)
+        fabCreatePost = findViewById(R.id.fabCreatePost)
+        userLocationTextView = findViewById(R.id.textViewUserLocation)
+
+        val currentUser = auth.currentUser
+        if (currentUser == null) {
+            startActivity(Intent(this, LoginActivity::class.java))
+            finish()
             return
         }
 
-        initViews()
-        setupUI()
-    }
-
-    private fun initViews() {
-        textViewUserLocation = findViewById(R.id.textViewUserLocation)
-        recyclerViewPosts = findViewById(R.id.recyclerViewPosts)
-        fabCreatePost = findViewById(R.id.fabCreatePost)
-    }
-
-    private fun setupUI() {
-        val currentUser = auth.currentUser!! // 로그인 상태는 위에서 확인했으므로 !! 사용 가능
-
-        // 1. 환영 메시지 설정
-        val displayName = currentUser.displayName
-        val welcomeMessage = if (!displayName.isNullOrEmpty()) {
-            "환영합니다, $displayName 님!"
-        } else {
-            "환영합니다!"
+        userLocationTextView.setOnClickListener {
+            startActivity(Intent(this, ProfileActivity::class.java))
         }
-        textViewUserLocation.text = welcomeMessage
 
-        // 2. 환영 메시지를 클릭하면 프로필 화면으로 이동
-        textViewUserLocation.setOnClickListener {
-            Log.d(tag, "Welcome message clicked. Navigating to ProfileActivity.")
-            val intent = Intent(this, ProfileActivity::class.java)
+        setupRecyclerView()
+        loadPosts()
+
+        fabCreatePost.setOnClickListener {
+            startActivity(Intent(this, CreatePostActivity::class.java))
+        }
+    }
+
+    private fun setupRecyclerView() {
+        postAdapter = PostAdapter(mutableListOf()) { post ->
+            val intent = Intent(this, PostDetailActivity::class.java)
+            intent.putExtra("POST_ID", post.id)
             startActivity(intent)
         }
-
-        // 3. RecyclerView 설정 (샘플 데이터 사용)
         recyclerViewPosts.layoutManager = LinearLayoutManager(this)
-        val samplePosts = listOf(
-            Post("첫 번째 게시글", "작성자 A"),
-            Post("두 번째 이야기", "사용자 B"),
-            Post("세 번째 공지사항", "관리자")
-        )
-        recyclerViewPosts.adapter = PostAdapter(samplePosts)
-
-        // 4. FAB 버튼 리스너 (기능은 추후 구현)
-        fabCreatePost.setOnClickListener {
-            Log.d(tag, "fabCreatePost clicked.")
-            // TODO: 새 글 작성 화면으로 이동하는 로직 구현
-        }
+        recyclerViewPosts.adapter = postAdapter
     }
 
-    private fun navigateToLogin() {
-        val intent = Intent(this, LoginActivity::class.java)
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-        startActivity(intent)
-        finish()
+    private fun loadPosts() {
+        firestore.collection("posts")
+            .orderBy("timestamp", Query.Direction.DESCENDING)
+            .addSnapshotListener { snapshots, e ->
+                if (e != null) {
+                    Log.w(TAG, "Error listening for posts documents", e)
+                    return@addSnapshotListener
+                }
+
+                if (snapshots == null) return@addSnapshotListener
+
+                val posts = mutableListOf<Post>()
+                for (doc in snapshots.documents) {
+                    try {
+                        val post = doc.toObject(Post::class.java)
+                        if (post != null) {
+                            post.id = doc.id // 문서 ID를 객체에 직접 할당
+                            posts.add(post)
+                        }
+                    } catch (ex: Exception) {
+                        Log.e(TAG, "Error converting document to Post object for doc ID: ${doc.id}", ex)
+                    }
+                }
+                postAdapter.updatePosts(posts)
+                Log.d(TAG, "Posts loaded. Count: ${posts.size}")
+            }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        if (auth.currentUser == null) {
+            startActivity(Intent(this, LoginActivity::class.java))
+            finish()
+        }
     }
 }
