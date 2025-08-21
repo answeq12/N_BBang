@@ -4,9 +4,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".HomeActivity">
+    tools:context=".HomeFragment">
 
-    <!-- 동네 인증 상태 표시 -->
     <TextView
         android:id="@+id/textViewUserLocation"
         android:layout_width="0dp"
@@ -23,7 +22,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- 게시글 목록 (RecyclerView) -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerViewPosts"
         android:layout_width="0dp"
@@ -34,8 +32,6 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-
-    <!-- 새 글 작성 버튼 (FloatingActionButton) -->
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabCreatePost"
         android:layout_width="wrap_content"
@@ -45,6 +41,6 @@
         android:contentDescription="새 게시글 작성"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:tint="?attr/colorOnPrimaryContainer" /> <!-- 아이콘 색상 -->
+        app:tint="?attr/colorOnPrimaryContainer" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
