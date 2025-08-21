@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="24dp"
-    tools:context=".ProfileActivity">
+    tools:context=".ProfileFragment">
 
     <TextView
         android:id="@+id/textViewProfileTitle"
@@ -79,8 +79,47 @@
         app:layout_constraintTop_toBottomOf="@+id/textViewLabelPhone"
         tools:text="010-1234-5678" />
 
+    <!-- 휴대폰 인증 버튼 (ProfileActivity.kt에서 제어) -->
+    <Button
+        android:id="@+id/buttonVerifyPhone"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="휴대폰 번호 인증하기"
+        android:visibility="gone"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textViewLabelPhone"
+        tools:visibility="visible" />
 
-    <!-- 정보 수정 버튼 (기능은 나중에 추가) -->
+    <!-- 정보 수정 버튼 -->
+    <TextView
+        android:id="@+id/textViewLabelLocation"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:text="동네 인증"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/buttonVerifyPhone" /> <TextView
+        android:id="@+id/textViewProfileLocation"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+            android:textSize="18sp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textViewLabelLocation"
+        tools:text="인증되지 않음" />
+
+    <Button
+        android:id="@+id/buttonVerifyLocation"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="현재 위치로 동네 인증하기"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/textViewProfileLocation" />
+
     <Button
         android:id="@+id/buttonEditProfile"
         android:layout_width="0dp"
@@ -89,7 +128,10 @@
         android:text="정보 수정"
         app:layout_constraintBottom_toTopOf="@+id/buttonLogout"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/buttonVerifyLocation"
+        app:layout_constraintVertical_bias="1.0" />
+
 
     <!-- 로그아웃 버튼 -->
     <Button

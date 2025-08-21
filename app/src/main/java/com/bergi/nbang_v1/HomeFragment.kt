@@ -21,6 +21,7 @@ class HomeFragment : Fragment() {
     private lateinit var firestore: FirebaseFirestore
     private lateinit var postAdapter: PostAdapter
 
+    private lateinit var userLocationTextView: TextView
     private val TAG = "HomeFragment_DEBUG"
 
     override fun onCreateView(
@@ -30,6 +31,24 @@ class HomeFragment : Fragment() {
         // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_home, container, false)
     }
+    private fun loadUserLocation() {
+        val user = Firebase.auth.currentUser
+        if (user != null) {
+            FirebaseFirestore.getInstance().collection("users").document(user.uid).get()
+                .addOnSuccessListener { document ->
+                    if (document != null) {
+                        val location = document.getString("location")
+                        if (location.isNullOrEmpty()) {
+                            userLocationTextView.text = "프로필 탭에서 동네를 인증해주세요."
+                        } else {
+                            userLocationTextView.text = location
+                        }
+                    }
+                }
+        } else {
+            userLocationTextView.text = "로그인이 필요합니다."
+        }
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -38,20 +57,14 @@ class HomeFragment : Fragment() {
 
         val recyclerViewPosts = view.findViewById<RecyclerView>(R.id.recyclerViewPosts)
         val fabCreatePost = view.findViewById<FloatingActionButton>(R.id.fabCreatePost)
-        val userLocationTextView = view.findViewById<TextView>(R.id.textViewUserLocation)
+        userLocationTextView = view.findViewById<TextView>(R.id.textViewUserLocation) // 초기화
 
-        // setupRecyclerView, loadPosts 등은 Activity에서와 거의 동일
         setupRecyclerView(recyclerViewPosts)
         loadPosts()
+        loadUserLocation() // 함수 호출 추가!
 
         fabCreatePost.setOnClickListener {
             startActivity(Intent(requireContext(), CreatePostActivity::class.java))
-        }
-
-        userLocationTextView.setOnClickListener {
-            // 이 부분은 ProfileFragment로 이동하는 것이므로, MainActivity가 처리하도록 할 수 있습니다.
-            // 지금은 임시로 Toast 메시지를 띄웁니다.
-            // Toast.makeText(requireContext(), "내 정보는 하단 탭을 이용해주세요.", Toast.LENGTH_SHORT).show()
         }
     }
 
