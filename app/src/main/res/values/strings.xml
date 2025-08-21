@@ -1,3 +1,36 @@
 <resources>
     <string name="app_name">nbang_v1</string>
+    <string name="title_activity_home">홈</string>
+        <!-- Other existing strings -->
+    <string name="welcome_message">Welcome, %1$s!</string>
+    <string name="welcome_message_default_user">Welcome, User!</string>
+    <string name="title_activity_login">LoginActivity</string>
+    <string name="prompt_email">Email</string>
+    <string name="prompt_password">Password</string>
+    <string name="action_sign_in">Sign in or register</string>
+    <string name="action_sign_in_short">Sign in</string>
+    <string name="welcome">"Welcome !"</string>
+    <string name="invalid_username">Not a valid username</string>
+    <string name="invalid_password">Password must be >5 characters</string>
+    <string name="login_failed">"Login failed"</string>
+    <string name="email_hint">이메일</string>
+    <string name="password_hint">비밀번호</string>
+    <string name="login_button_text">로그인</string>
+    <string name="signup_button_text">회원가입</string>
+    <string name="logout_button_text">로그아웃</string>
+    <string name="title_activity_sign_up">SignUpActivity</string>
+    <string name="confirm_password_hint">비밀번호 확인</string>
+    <string name="signup_page_title">회원가입</string>
+    <string name="nickname_hint">닉네임</string>
+    <string name="default_user_location_text">동네 인증 정보를 불러오는 중...</string>
+    <string name="create_post_fab_content_desc">새 게시글 작성</string>
+    <string name="welcome_default">환영합니다!</string>
+    <string name="welcome_user_nickname">환영합니다, %1$s님!</string>
+    <string name="welcome_user_email">환영합니다, %1$s님!</string>
+
+    <!-- <string name="app_name">Nbang_v1</string> -->
+
+    <!-- <string name="welcome_message">환영합니다, %1$s님!</string> -->
+
+    <!-- <string name="welcome_message_default_user">사용자</string> -->
 </resources>

@@ -1,64 +1,50 @@
 package com.bergi.nbang_v1
 
-import android.content.Intent
 import android.os.Bundle
-import android.widget.Button
-import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.ktx.auth
-import com.google.firebase.ktx.Firebase
+import androidx.fragment.app.Fragment
+import com.google.android.material.bottomnavigation.BottomNavigationView
 
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var auth: FirebaseAuth
-    private lateinit var textViewWelcome: TextView
-    private lateinit var buttonLogout: Button
+    private val homeFragment = HomeFragment()
+    private val chatFragment = ChatFragment()
+    private val profileFragment = ProfileFragment()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        auth = Firebase.auth
+        val bottomNavigationView = findViewById<BottomNavigationView>(R.id.bottomNavigationView)
 
-        textViewWelcome = findViewById(R.id.textViewWelcome)
-        buttonLogout = findViewById(R.id.buttonLogout)
+        // 앱 시작 시 첫 화면으로 HomeFragment를 설정
+        replaceFragment(homeFragment)
 
-        buttonLogout.setOnClickListener {
-            signOut()
-        }
-    }
-
-    override fun onStart() {
-        super.onStart()
-        val currentUser = auth.currentUser
-        if (currentUser != null) {
-            // 사용자가 로그인되어 있음
-            val welcomeMessage = if (!currentUser.displayName.isNullOrEmpty()) {
-                "환영합니다, ${currentUser.displayName}님!"
-            } else if (!currentUser.email.isNullOrEmpty()) {
-                "로그인됨: ${currentUser.email}"
-            } else {
-                "환영합니다!" // displayName과 email 모두 없는 경우 (이론상 드묾)
+        bottomNavigationView.setOnItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.navigation_home -> {
+                    replaceFragment(homeFragment)
+                    true
+                }
+                R.id.navigation_chat -> {
+                    replaceFragment(chatFragment)
+                    true
+                }
+                R.id.navigation_profile -> {
+                    replaceFragment(profileFragment)
+                    true
+                }
+                else -> false
             }
-            textViewWelcome.text = welcomeMessage
-        } else {
-            // 사용자가 로그인되어 있지 않음 -> LoginActivity로 이동
-            Toast.makeText(this, "로그인이 필요합니다.", Toast.LENGTH_SHORT).show()
-            navigateToLogin()
         }
     }
 
-    private fun signOut() {
-        auth.signOut()
-        Toast.makeText(this, "로그아웃되었습니다.", Toast.LENGTH_SHORT).show()
-        navigateToLogin()
-    }
-
-    private fun navigateToLogin() {
-        val intent = Intent(this, LoginActivity::class.java)
-        startActivity(intent)
-        finish() // MainActivity를 종료하여 뒤로가기 시 다시 보이지 않도록 함
+    private fun replaceFragment(fragment: Fragment) {
+        // supportFragmentManager를 사용해 Fragment를 교체합니다.
+        val transaction = supportFragmentManager.beginTransaction()
+        // 애니메이션 효과를 없애기 위해 0, 0을 전달합니다.
+        transaction.setCustomAnimations(0, 0)
+        transaction.replace(R.id.fragment_container, fragment)
+        transaction.commit()
     }
 }
