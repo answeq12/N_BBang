@@ -26,7 +26,6 @@ class PostDetailActivity : AppCompatActivity() {
     private lateinit var timestampTextView: TextView
     private lateinit var titleTextView: TextView
     private lateinit var contentTextView: TextView
-    private lateinit var amountPerPersonTextView: TextView
     private lateinit var peopleTextView: TextView
     private lateinit var placeTextView: TextView
     private lateinit var joinButton: Button
@@ -45,8 +44,7 @@ class PostDetailActivity : AppCompatActivity() {
         categoryTextView = findViewById(R.id.textViewDetailCategory)
         timestampTextView = findViewById(R.id.textViewDetailTimestamp)
         titleTextView = findViewById(R.id.textViewDetailTitle)
-        contentTextView = findViewById(R.id.textViewDetailContent)
-        amountPerPersonTextView = findViewById(R.id.textViewAmountPerPerson)
+        contentTextView = findViewById(R.id.textViewDetailContent) // 이 줄을 수정합니다.
         peopleTextView = findViewById(R.id.textViewDetailPeople)
         placeTextView = findViewById(R.id.textViewDetailPlace)
         joinButton = findViewById(R.id.buttonJoin)
@@ -64,7 +62,6 @@ class PostDetailActivity : AppCompatActivity() {
             Toast.makeText(this, "N빵 참여 기능은 준비 중입니다.", Toast.LENGTH_SHORT).show()
         }
 
-        // --- 삭제 버튼 클릭 리스너 추가 ---
         deleteButton.setOnClickListener {
             showDeleteConfirmationDialog()
         }
@@ -98,12 +95,6 @@ class PostDetailActivity : AppCompatActivity() {
         peopleTextView.text = "${post.currentPeople} / ${post.totalPeople}명"
         placeTextView.text = post.meetingPlace
         timestampTextView.text = formatTimestamp(post.timestamp)
-
-        if (post.totalPeople > 0) {
-            val amountPerPerson = post.totalAmount / post.totalPeople
-            val formattedAmount = NumberFormat.getCurrencyInstance(Locale.KOREA).format(amountPerPerson)
-            amountPerPersonTextView.text = formattedAmount
-        }
 
         // --- 작성자 확인 및 버튼 가시성 설정 로직 추가 ---
         val currentUser = Firebase.auth.currentUser

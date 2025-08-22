@@ -16,7 +16,6 @@ data class Post(
     var title: String = "",
     var content: String = "", // '내용' 필드가 포함되어 있는지 확인하세요.
     var category: String = "",
-    var totalAmount: Long = 0,
     var totalPeople: Int = 0,
     var currentPeople: Int = 1,
     var meetingPlace: String = "",

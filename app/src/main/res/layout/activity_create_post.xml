@@ -11,7 +11,6 @@
         android:layout_height="wrap_content"
         android:padding="16dp">
 
-        <!-- 카테고리 -->
         <TextView
             android:id="@+id/textViewLabelCategory"
             android:layout_width="wrap_content"
@@ -31,7 +30,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/textViewLabelCategory" />
 
-        <!-- 제목 -->
         <TextView
             android:id="@+id/textViewLabelTitle"
             android:layout_width="wrap_content"
@@ -54,7 +52,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/textViewLabelTitle" />
 
-        <!-- 내용 -->
         <TextView
             android:id="@+id/textViewLabelContent"
             android:layout_width="wrap_content"
@@ -78,30 +75,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/textViewLabelContent" />
 
-        <!-- 총 금액 -->
-        <TextView
-            android:id="@+id/textViewLabelAmount"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="총 금액"
-            android:textAppearance="?attr/textAppearanceLabelLarge"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/editTextPostContent" />
-
-        <EditText
-            android:id="@+id/editTextTotalAmount"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:hint="예: 20000"
-            android:inputType="number"
-            android:minHeight="48dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/textViewLabelAmount" />
-
-        <!-- 총 모집 인원 -->
         <TextView
             android:id="@+id/textViewLabelPeople"
             android:layout_width="wrap_content"
@@ -110,7 +83,7 @@
             android:text="총 모집 인원"
             android:textAppearance="?attr/textAppearanceLabelLarge"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/editTextTotalAmount" />
+            app:layout_constraintTop_toBottomOf="@+id/editTextPostContent" />
 
         <EditText
             android:id="@+id/editTextTotalPeople"
@@ -124,7 +97,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/textViewLabelPeople" />
 
-        <!-- 만날 장소 -->
         <TextView
             android:id="@+id/textViewLabelPlace"
             android:layout_width="wrap_content"
@@ -147,14 +119,13 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/textViewLabelPlace" />
 
-        <!-- 등록 버튼 -->
         <Button
             android:id="@+id/buttonCreatePost"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
-            android:text="N빵 올리기"
             android:minHeight="56dp"
+            android:text="N빵 올리기"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/editTextMeetingPlace" />
