@@ -50,7 +50,7 @@ class CreatePostActivity : AppCompatActivity() {
     }
 
     private fun setupSpinner() {
-        val categories = listOf("음식 배달", "생필품 공동구매","대리구매 원해요","대리구매 해드려요", "택시 합승", "기타")
+        val categories = listOf("음식 배달", "생필품 공동구매", "대리구매 원해요", "대리구매 해드려요", "택시 합승", "기타")
         val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, categories)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinnerCategory.adapter = adapter
@@ -62,6 +62,9 @@ class CreatePostActivity : AppCompatActivity() {
             Toast.makeText(this, "로그인이 필요합니다.", Toast.LENGTH_SHORT).show()
             return
         }
+
+        // 닉네임 가져오기 추가
+        val creatorName = currentUser.displayName ?: "익명"
 
         val category = spinnerCategory.selectedItem.toString()
         val title = editTextTitle.text.toString().trim()
@@ -85,6 +88,7 @@ class CreatePostActivity : AppCompatActivity() {
             title = title,
             content = content,
             category = category,
+            creatorName = creatorName, // 이 줄을 추가합니다.
             totalPeople = totalPeople,
             meetingPlace = place,
             creatorUid = currentUser.uid,

@@ -16,6 +16,7 @@ data class Post(
     var title: String = "",
     var content: String = "", // '내용' 필드가 포함되어 있는지 확인하세요.
     var category: String = "",
+    var creatorName: String = "", // 닉네임 저장을 위해 이 줄을 추가했습니다.
     var totalPeople: Int = 0,
     var currentPeople: Int = 1,
     var meetingPlace: String = "",

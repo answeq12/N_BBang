@@ -50,6 +50,17 @@
             tools:text="BHC 뿌링클 치킨 같이 시키실 분!" />
 
         <TextView
+            android:id="@+id/textViewCreatorName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textAppearance="?attr/textAppearanceBody2"
+            android:textColor="?android:attr/textColorSecondary"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/textViewDetailTitle"
+            tools:text="작성자 닉네임" />
+
+        <TextView
             android:id="@+id/textViewDetailContent"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -60,7 +71,7 @@
             android:textSize="16sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/textViewDetailTitle" />
+            app:layout_constraintTop_toBottomOf="@+id/textViewCreatorName" />
 
         <View
             android:id="@+id/divider"
