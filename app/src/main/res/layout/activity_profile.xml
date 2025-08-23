@@ -5,7 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="24dp"
-    tools:context=".ProfileActivity">
+    tools:context=".ProfileFragment">
 
     <TextView
         android:id="@+id/textViewProfileTitle"
@@ -16,7 +16,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <!-- 닉네임 표시 -->
+    <!-- 닉네임 -->
     <TextView
         android:id="@+id/textViewLabelNickname"
         android:layout_width="wrap_content"
@@ -37,7 +37,7 @@
         app:layout_constraintTop_toBottomOf="@+id/textViewLabelNickname"
         tools:text="사용자 닉네임" />
 
-    <!-- 이메일 표시 -->
+    <!-- 이메일 -->
     <TextView
         android:id="@+id/textViewLabelEmail"
         android:layout_width="wrap_content"
@@ -58,7 +58,7 @@
         app:layout_constraintTop_toBottomOf="@+id/textViewLabelEmail"
         tools:text="user@example.com" />
 
-    <!-- 휴대폰 번호 표시 -->
+    <!-- 휴대폰 번호 -->
     <TextView
         android:id="@+id/textViewLabelPhone"
         android:layout_width="wrap_content"
@@ -79,8 +79,19 @@
         app:layout_constraintTop_toBottomOf="@+id/textViewLabelPhone"
         tools:text="010-1234-5678" />
 
+    <Button
+        android:id="@+id/buttonVerifyPhone"
+        style="@style/Widget.MaterialComponents.Button.TextButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="인증하기"
+        android:visibility="gone"
+        tools:visibility="visible"
+        app:layout_constraintBottom_toBottomOf="@+id/textViewProfilePhone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/textViewProfilePhone" />
 
-    <!-- 정보 수정 버튼 (기능은 나중에 추가) -->
+    <!-- 정보 수정 버튼 -->
     <Button
         android:id="@+id/buttonEditProfile"
         android:layout_width="0dp"
@@ -102,5 +113,16 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
+
+    <Button
+        android:id="@+id/buttonDeleteAccount"
+        style="@style/Widget.AppCompat.Button.Borderless"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="계정 탈퇴"
+        android:textSize="12sp"
+        android:textColor="?android:attr/textColorSecondary"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

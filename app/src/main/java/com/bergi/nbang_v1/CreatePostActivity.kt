@@ -22,7 +22,6 @@ class CreatePostActivity : AppCompatActivity() {
     private lateinit var spinnerCategory: Spinner
     private lateinit var editTextTitle: EditText
     private lateinit var editTextContent: EditText
-    private lateinit var editTextAmount: EditText
     private lateinit var editTextPeople: EditText
     private lateinit var editTextPlace: EditText
     private lateinit var createButton: Button
@@ -39,7 +38,6 @@ class CreatePostActivity : AppCompatActivity() {
         spinnerCategory = findViewById(R.id.spinnerCategory)
         editTextTitle = findViewById(R.id.editTextPostTitle)
         editTextContent = findViewById(R.id.editTextPostContent)
-        editTextAmount = findViewById(R.id.editTextTotalAmount)
         editTextPeople = findViewById(R.id.editTextTotalPeople)
         editTextPlace = findViewById(R.id.editTextMeetingPlace)
         createButton = findViewById(R.id.buttonCreatePost)
@@ -52,7 +50,7 @@ class CreatePostActivity : AppCompatActivity() {
     }
 
     private fun setupSpinner() {
-        val categories = listOf("음식 배달", "생필품 공동구매", "택시 합승", "기타")
+        val categories = listOf("음식 배달", "생필품 공동구매", "대리구매 원해요", "대리구매 해드려요", "택시 합승", "기타")
         val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, categories)
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinnerCategory.adapter = adapter
@@ -65,23 +63,24 @@ class CreatePostActivity : AppCompatActivity() {
             return
         }
 
+        // 닉네임 가져오기 추가
+        val creatorName = currentUser.displayName ?: "익명"
+
         val category = spinnerCategory.selectedItem.toString()
         val title = editTextTitle.text.toString().trim()
         val content = editTextContent.text.toString().trim()
-        val amountStr = editTextAmount.text.toString().trim()
         val peopleStr = editTextPeople.text.toString().trim()
         val place = editTextPlace.text.toString().trim()
 
-        if (title.isEmpty() || content.isEmpty() || amountStr.isEmpty() || peopleStr.isEmpty() || place.isEmpty()) {
+        if (title.isEmpty() || content.isEmpty() || peopleStr.isEmpty() || place.isEmpty()) {
             Toast.makeText(this, "모든 항목을 입력해주세요.", Toast.LENGTH_SHORT).show()
             return
         }
 
-        val totalAmount = amountStr.toLongOrNull()
         val totalPeople = peopleStr.toIntOrNull()
 
-        if (totalAmount == null || totalPeople == null || totalPeople <= 1) {
-            Toast.makeText(this, "금액과 인원(2명 이상)을 올바르게 입력해주세요.", Toast.LENGTH_SHORT).show()
+        if (totalPeople == null || totalPeople <= 1) {
+            Toast.makeText(this, "인원(2명 이상)을 올바르게 입력해주세요.", Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -89,7 +88,7 @@ class CreatePostActivity : AppCompatActivity() {
             title = title,
             content = content,
             category = category,
-            totalAmount = totalAmount,
+            creatorName = creatorName, // 이 줄을 추가합니다.
             totalPeople = totalPeople,
             meetingPlace = place,
             creatorUid = currentUser.uid,

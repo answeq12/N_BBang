@@ -1,8 +1,13 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
     <style name="Base.Theme.Nbang_v1" parent="Theme.Material3.DayNight.NoActionBar">
+
+    </style>
         <!-- Customize your light theme here. -->
         <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+    <style name="Theme.Nbang_v1.NoActionBar" parent="Theme.Nbang_v1">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
     </style>
 
     <style name="Theme.Nbang_v1" parent="Base.Theme.Nbang_v1" />

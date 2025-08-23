@@ -3,6 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <application
         android:allowBackup="true"
@@ -14,9 +16,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Nbang_v1"
         tools:targetApi="31">
-        <activity
-            android:name=".SignUpActivity"
-            android:exported="false" />
+
         <activity
             android:name=".LoginActivity"
             android:exported="true">
@@ -25,21 +25,41 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
         <activity
             android:name=".MainActivity"
-            android:exported="true">
-            <!--            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
+            android:exported="true" />
+        <activity
+            android:name=".SignUpActivity"
+            android:exported="false" />
+        <activity
+            android:name=".WelcomeActivity"
+            android:exported="false" />
+        <activity
+            android:name=".CreatePostActivity"
+            android:exported="false" />
+        <activity
+            android:name=".PostDetailActivity"
+            android:exported="false" />
 
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>-->
-        </activity>
+        <activity
+            android:name=".EditProfileActivity"
+            android:exported="false" />
+        <activity
+            android:name=".VerifyPhoneActivity"
+            android:exported="false" />
+        <activity
+            android:name=".VerifyLocationActivity"
+            android:exported="false" />
 
-        <activity android:name=".CreatePostActivity" />
+        <activity
+            android:name=".MyActivitiesActivity"
+            android:exported="false" />
 
-        <activity android:name=".WelcomeActivity" />
+        <activity
+            android:name=".UserProfileActivity"
+            android:theme="@style/Theme.Nbang_v1.NoActionBar" />
 
-        <activity android:name=".PostDetailActivity" />
     </application>
 
 </manifest>

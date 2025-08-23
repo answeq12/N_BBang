@@ -20,6 +20,7 @@ import com.google.firebase.auth.FirebaseUser // FirebaseUser import 추가
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
+import com.google.firebase.firestore.FirebaseFirestore
 
 class LoginActivity : AppCompatActivity() {
 
@@ -118,9 +119,37 @@ class LoginActivity : AppCompatActivity() {
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
                     val user = auth.currentUser
-                    Log.d(TAG, "Google signIn with Firebase: success. User: ${user?.displayName}")
-                    Toast.makeText(this, "Google 로그인 성공! (${getNicknameForWelcome(user)})", Toast.LENGTH_SHORT).show()
-                    navigateToWelcomeActivity(user) // WelcomeActivity로 이동
+                    val authResult = task.result //
+                    val isNewUser = authResult?.additionalUserInfo?.isNewUser ?: false
+
+                    // ▼▼▼ 이 부분이 핵심입니다 ▼▼▼
+                    // 새로운 사용자인 경우에만 Firestore에 정보를 생성합니다.
+                    if (isNewUser && user != null) {
+                        val db = FirebaseFirestore.getInstance()
+                        val nickname = getNicknameForWelcome(user)
+                        val userMap = hashMapOf(
+                            "uid" to user.uid,
+                            "email" to user.email,
+                            "nickname" to nickname,
+                            "phoneNumber" to "", // 초기값
+                            "location" to ""  // 초기값
+                        )
+                        db.collection("users").document(user.uid).set(userMap)
+                            .addOnSuccessListener {
+                                Log.d(TAG, "New Google user's info saved to Firestore.")
+                                navigateToWelcomeActivity(user) // DB 저장 후 화면 이동
+                            }
+                            .addOnFailureListener { e ->
+                                Log.e(TAG, "Error saving new Google user to Firestore", e)
+                                navigateToWelcomeActivity(user) // 실패해도 일단 진행
+                            }
+                    } else {
+                        // 기존 사용자는 바로 화면 이동
+                        Log.d(TAG, "Google signIn with Firebase: success. User: ${user?.displayName}")
+                        navigateToWelcomeActivity(user)
+                    }
+                    // ▲▲▲ 여기까지 수정 ▲▲▲
+
                 } else {
                     Log.w(TAG, "Google signIn with Firebase: failure", task.exception)
                     Toast.makeText(this, "Google 로그인 연동 실패: ${task.exception?.message}", Toast.LENGTH_LONG).show()
