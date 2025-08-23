@@ -68,7 +68,6 @@ class SignUpActivity : AppCompatActivity() {
 
         // "인증번호 받기" 버튼 리스너
         sendCodeButton.setOnClickListener {
-            // ... (이전과 동일한 인증번호 요청 로직) ...
             val phoneNumber = "+82" + phoneEditText.text.toString().substring(1)
             val options = PhoneAuthOptions.newBuilder(auth)
                 .setPhoneNumber(phoneNumber).setTimeout(60L, TimeUnit.SECONDS)

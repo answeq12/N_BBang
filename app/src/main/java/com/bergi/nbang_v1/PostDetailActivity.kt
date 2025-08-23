@@ -1,5 +1,6 @@
 package com.bergi.nbang_v1
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -7,19 +8,17 @@ import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
+import com.google.android.material.card.MaterialCardView
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
-import java.text.NumberFormat
 import java.util.Date
-import java.util.Locale
 
-class PostDetailActivity : AppCompatActivity() {
+class PostDetailActivity : BaseActivity() {
 
     private lateinit var firestore: FirebaseFirestore
     private var postId: String? = null
-    private var currentPost: Post? = null // 현재 게시글 정보를 저장할 변수
+    private var currentPost: Post? = null
 
     // UI 요소
     private lateinit var categoryTextView: TextView
@@ -29,8 +28,9 @@ class PostDetailActivity : AppCompatActivity() {
     private lateinit var peopleTextView: TextView
     private lateinit var placeTextView: TextView
     private lateinit var joinButton: Button
-    private lateinit var deleteButton: Button // 삭제 버튼 변수 추가
-    private lateinit var creatorNameTextView: TextView // 닉네임 TextView 추가
+    private lateinit var deleteButton: Button
+    private lateinit var creatorProfileCard: MaterialCardView
+    private lateinit var creatorNicknameTextView: TextView
 
     private val TAG = "PostDetailActivity"
 
@@ -50,7 +50,8 @@ class PostDetailActivity : AppCompatActivity() {
         placeTextView = findViewById(R.id.textViewDetailPlace)
         joinButton = findViewById(R.id.buttonJoin)
         deleteButton = findViewById(R.id.buttonDelete)
-        creatorNameTextView = findViewById(R.id.textViewCreatorName) // 닉네임 TextView 연결
+        creatorProfileCard = findViewById(R.id.cardViewCreatorProfile)
+        creatorNicknameTextView = findViewById(R.id.textViewCreatorNickname)
 
         if (postId == null) {
             Toast.makeText(this, "게시글 정보를 불러올 수 없습니다.", Toast.LENGTH_SHORT).show()
@@ -60,18 +61,13 @@ class PostDetailActivity : AppCompatActivity() {
 
         loadPostDetails()
 
-        joinButton.setOnClickListener {
-            Toast.makeText(this, "N빵 참여 기능은 준비 중입니다.", Toast.LENGTH_SHORT).show()
-        }
-
         deleteButton.setOnClickListener {
             showDeleteConfirmationDialog()
         }
     }
 
     private fun loadPostDetails() {
-        firestore.collection("posts").document(postId!!)
-            .get()
+        firestore.collection("posts").document(postId!!).get()
             .addOnSuccessListener { document ->
                 if (document != null && document.exists()) {
                     currentPost = document.toObject(Post::class.java)
@@ -97,40 +93,55 @@ class PostDetailActivity : AppCompatActivity() {
         peopleTextView.text = "${post.currentPeople} / ${post.totalPeople}명"
         placeTextView.text = post.meetingPlace
         timestampTextView.text = formatTimestamp(post.timestamp)
-        creatorNameTextView.text = post.creatorName // 닉네임 텍스트 설정
 
-        // --- 작성자 확인 및 버튼 가시성 설정 로직 추가 ---
         val currentUser = Firebase.auth.currentUser
         if (currentUser != null && currentUser.uid == post.creatorUid) {
-            // 현재 사용자가 게시글 작성자이면 삭제 버튼을 보여줌
             deleteButton.visibility = View.VISIBLE
         } else {
-            // 작성자가 아니면 삭제 버튼을 숨김
             deleteButton.visibility = View.GONE
+        }
+
+        loadCreatorInfo(post.creatorUid)
+
+        creatorProfileCard.setOnClickListener {
+            val intent = Intent(this, UserProfileActivity::class.java)
+            intent.putExtra("USER_ID", post.creatorUid)
+            startActivity(intent)
+            overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
         }
     }
 
-    // --- 삭제 확인 다이얼로그를 보여주는 함수 추가 ---
+    private fun loadCreatorInfo(creatorId: String) {
+        firestore.collection("users").document(creatorId).get()
+            .addOnSuccessListener { document ->
+                if (document != null && document.exists()) {
+                    val nickname = document.getString("nickname") ?: "알 수 없음"
+                    creatorNicknameTextView.text = nickname
+                } else {
+                    creatorNicknameTextView.text = "알 수 없음"
+                }
+            }
+            .addOnFailureListener {
+                creatorNicknameTextView.text = "정보 로딩 실패"
+            }
+    }
+
     private fun showDeleteConfirmationDialog() {
         AlertDialog.Builder(this)
             .setTitle("게시글 삭제")
-            .setMessage("정말 이 게시글을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.")
-            .setPositiveButton("삭제") { _, _ ->
-                deletePost()
-            }
+            .setMessage("정말 이 게시글을 삭제하시겠습니까?")
+            .setPositiveButton("삭제") { _, _ -> deletePost() }
             .setNegativeButton("취소", null)
-            .setIcon(android.R.drawable.ic_dialog_alert)
             .show()
     }
 
-    // --- 게시글을 실제로 삭제하는 함수 추가 ---
     private fun deletePost() {
         if (postId != null) {
             firestore.collection("posts").document(postId!!)
                 .delete()
                 .addOnSuccessListener {
                     Toast.makeText(this, "게시글이 삭제되었습니다.", Toast.LENGTH_SHORT).show()
-                    finish() // 삭제 성공 후 화면 종료
+                    finish()
                 }
                 .addOnFailureListener { e ->
                     Toast.makeText(this, "삭제에 실패했습니다: ${e.message}", Toast.LENGTH_SHORT).show()

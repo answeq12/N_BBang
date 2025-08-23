@@ -52,6 +52,14 @@
             android:name=".VerifyLocationActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".MyActivitiesActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".UserProfileActivity"
+            android:theme="@style/Theme.Nbang_v1.NoActionBar" />
+
     </application>
 
 </manifest>

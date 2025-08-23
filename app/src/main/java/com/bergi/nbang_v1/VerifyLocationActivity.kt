@@ -7,6 +7,7 @@ import android.location.Geocoder
 import android.location.Location
 import android.os.Bundle
 import android.os.Looper
+import android.util.Log
 import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.Button
@@ -35,6 +36,7 @@ class VerifyLocationActivity : AppCompatActivity() {
     // 위치 서비스 및 DB
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var db: FirebaseFirestore
+    private val TAG = "VerifyLocation_DEBUG" // 로그 태그 변경
 
     private val daeguSigunguList: List<String> = listOf(
         "중구", "동구", "서구", "남구", "북구", "수성구", "달서구", "달성군", "군위군"
@@ -107,18 +109,15 @@ class VerifyLocationActivity : AppCompatActivity() {
     private fun getCurrentLocationAndCompare(selectedSigungu: String) {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) return
 
-        // 1. 가장 최근 위치를 먼저 시도
         fusedLocationClient.lastLocation.addOnSuccessListener { location ->
             if (location != null) {
-                // 최근 위치가 있으면 바로 사용
                 compareLocation(location, selectedSigungu)
             } else {
-                // ▼▼▼ 최근 위치가 없으면, 새로운 위치를 직접 요청 (핵심 로직) ▼▼▼
                 val locationRequest = LocationRequest.create().apply {
                     priority = Priority.PRIORITY_HIGH_ACCURACY
                     interval = 5000
                     fastestInterval = 1000
-                    numUpdates = 1 // 한 번만 위치를 받아옴
+                    numUpdates = 1
                 }
 
                 val locationCallback = object : LocationCallback() {
@@ -129,7 +128,6 @@ class VerifyLocationActivity : AppCompatActivity() {
                         } else {
                             handleFailure("현재 위치를 가져오는 데 실패했습니다.")
                         }
-                        // 위치 업데이트 중단 (배터리 절약)
                         fusedLocationClient.removeLocationUpdates(this)
                     }
                 }
@@ -140,12 +138,23 @@ class VerifyLocationActivity : AppCompatActivity() {
         }
     }
 
-    // 위치 정보를 주소로 변환하고 비교하는 로직을 별도 함수로 분리
+    // --- 이 부분을 수정했습니다 ---
     private fun compareLocation(location: Location, selectedSigungu: String) {
         val geocoder = Geocoder(this, Locale.KOREA)
+        Log.d(TAG, "주소 변환 시도. Lat: ${location.latitude}, Lon: ${location.longitude}")
+
         try {
             val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
-            val currentSigungu = addresses?.firstOrNull()?.locality
+
+            if (addresses.isNullOrEmpty()) {
+                Log.w(TAG, "주소 변환 실패: Geocoder가 주소를 반환하지 않았습니다.")
+                handleFailure("주소 정보를 찾을 수 없습니다. 네트워크 연결을 확인해주세요.")
+                return
+            }
+
+            val address = addresses[0]
+            val currentSigungu = address.locality // 'locality'가 시/군/구에 해당합니다.
+            Log.d(TAG, "주소 변환 성공: 전체 주소 - ${address.getAddressLine(0)}, locality - $currentSigungu")
 
             if (currentSigungu == selectedSigungu) {
                 val fullLocation = "대구광역시 $selectedSigungu"
@@ -154,6 +163,7 @@ class VerifyLocationActivity : AppCompatActivity() {
                 handleFailure("인증 실패: 선택하신 '$selectedSigungu'이(가) 아닙니다.\n(현재 위치: ${currentSigungu ?: "알 수 없음"})")
             }
         } catch (e: Exception) {
+            Log.e(TAG, "주소 변환 중 예외 발생", e)
             handleFailure("주소 변환 중 오류가 발생했습니다.")
         }
     }

@@ -44,7 +44,7 @@
             app:layout_constraintTop_toTopOf="@+id/textViewPostCategory"
             app:layout_constraintBottom_toBottomOf="@+id/textViewPostCategory"
             tools:text="모집중"
-            tools:textColor="@color/status_recruiting" /> <!-- 상태에 따라 색 변경 필요 -->
+            tools:textColor="@color/status_recruiting" />
 
         <!-- 게시글 제목 -->
         <TextView

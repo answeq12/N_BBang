@@ -50,17 +50,6 @@
             tools:text="BHC 뿌링클 치킨 같이 시키실 분!" />
 
         <TextView
-            android:id="@+id/textViewCreatorName"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:textAppearance="?attr/textAppearanceBody2"
-            android:textColor="?android:attr/textColorSecondary"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/textViewDetailTitle"
-            tools:text="작성자 닉네임" />
-
-        <TextView
             android:id="@+id/textViewDetailContent"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -71,7 +60,43 @@
             android:textSize="16sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/textViewCreatorName" />
+            app:layout_constraintTop_toBottomOf="@+id/textViewDetailTitle" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardViewCreatorProfile"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            app:cardCornerRadius="12dp"
+            app:strokeWidth="1dp"
+            app:strokeColor="?attr/colorOutline"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/textViewDetailContent">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:padding="12dp"
+                android:gravity="center_vertical">
+
+                <ImageView
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:src="@drawable/ic_profile"
+                    android:background="@drawable/background_circle"
+                    android:padding="6dp"/>
+
+                <TextView
+                    android:id="@+id/textViewCreatorNickname"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:textStyle="bold"
+                    tools:text="작성자 닉네임"/>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
         <View
             android:id="@+id/divider"
@@ -81,7 +106,7 @@
             android:background="?android:attr/listDivider"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/textViewDetailContent" />
+            app:layout_constraintTop_toBottomOf="@+id/cardViewCreatorProfile" />
 
         <TextView
             android:id="@+id/labelPeople"
@@ -128,7 +153,7 @@
             style="?attr/materialButtonOutlinedStyle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="24dp"
             android:minHeight="56dp"
             android:text="이 게시글 삭제하기"
             android:textColor="?attr/colorError"
@@ -143,7 +168,7 @@
             android:id="@+id/buttonJoin"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
+            android:layout_marginTop="8dp"
             android:minHeight="56dp"
             android:text="N빵 참여하기"
             app:layout_constraintEnd_toEndOf="parent"
