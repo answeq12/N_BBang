@@ -1,0 +1,24 @@
+<layer-list xmlns:android="[http://schemas.android.com/apk/res/android](http://schemas.android.com/apk/res/android)">
+    <!-- 배경 -->
+    <item android:id="@android:id/background">
+        <shape>
+            <corners android:radius="10dp" />
+            <solid android:color="?attr/colorSurfaceVariant" />
+            <!-- 살짝 그림자 효과 -->
+            <stroke android:width="1dp" android:color="#1A000000"/>
+        </shape>
+    </item>
+    <!-- 채워지는 부분 (경험치) -->
+    <item android:id="@android:id/progress">
+        <!-- scale 태그를 사용해야 그라데이션이 예쁘게 채워집니다 -->
+        <scale android:scaleWidth="100%">
+            <shape>
+                <corners android:radius="10dp" />
+                <gradient
+                    android:startColor="?attr/colorPrimary"
+                    android:endColor="?attr/colorPrimaryVariant"
+                    android:angle="0" />
+            </shape>
+        </scale>
+    </item>
+</layer-list>
