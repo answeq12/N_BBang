@@ -30,6 +30,7 @@ class PostDetailActivity : AppCompatActivity() {
     private lateinit var placeTextView: TextView
     private lateinit var joinButton: Button
     private lateinit var deleteButton: Button // 삭제 버튼 변수 추가
+    private lateinit var creatorNameTextView: TextView // 닉네임 TextView 추가
 
     private val TAG = "PostDetailActivity"
 
@@ -44,11 +45,12 @@ class PostDetailActivity : AppCompatActivity() {
         categoryTextView = findViewById(R.id.textViewDetailCategory)
         timestampTextView = findViewById(R.id.textViewDetailTimestamp)
         titleTextView = findViewById(R.id.textViewDetailTitle)
-        contentTextView = findViewById(R.id.textViewDetailContent) // 이 줄을 수정합니다.
+        contentTextView = findViewById(R.id.textViewDetailContent)
         peopleTextView = findViewById(R.id.textViewDetailPeople)
         placeTextView = findViewById(R.id.textViewDetailPlace)
         joinButton = findViewById(R.id.buttonJoin)
-        deleteButton = findViewById(R.id.buttonDelete) // 삭제 버튼 초기화
+        deleteButton = findViewById(R.id.buttonDelete)
+        creatorNameTextView = findViewById(R.id.textViewCreatorName) // 닉네임 TextView 연결
 
         if (postId == null) {
             Toast.makeText(this, "게시글 정보를 불러올 수 없습니다.", Toast.LENGTH_SHORT).show()
@@ -95,6 +97,7 @@ class PostDetailActivity : AppCompatActivity() {
         peopleTextView.text = "${post.currentPeople} / ${post.totalPeople}명"
         placeTextView.text = post.meetingPlace
         timestampTextView.text = formatTimestamp(post.timestamp)
+        creatorNameTextView.text = post.creatorName // 닉네임 텍스트 설정
 
         // --- 작성자 확인 및 버튼 가시성 설정 로직 추가 ---
         val currentUser = Firebase.auth.currentUser
