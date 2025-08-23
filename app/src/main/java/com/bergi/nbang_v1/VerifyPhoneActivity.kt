@@ -80,24 +80,36 @@ class VerifyPhoneActivity : AppCompatActivity() {
 
     // ▼▼▼ Firestore 업데이트 로직이 추가된 함수 ▼▼▼
     private fun linkPhoneNumberToCurrentUser(user: FirebaseUser, credential: AuthCredential) {
-        user.linkWithCredential(credential).addOnCompleteListener(this) { task ->
-            if (task.isSuccessful) {
-                // 인증 성공 후, Firestore DB에 전화번호 업데이트
-                val updatedPhoneNumber = user.phoneNumber ?: ""
-                db.collection("users").document(user.uid)
-                    .update("phoneNumber", updatedPhoneNumber)
-                    .addOnSuccessListener {
-                        Toast.makeText(this, "휴대폰 번호가 성공적으로 인증되었습니다.", Toast.LENGTH_SHORT).show()
-                        setResult(Activity.RESULT_OK)
+        user.linkWithCredential(credential).addOnCompleteListener(this) { linkTask ->
+            if (linkTask.isSuccessful) {
+                // ▼▼▼ 핵심 해결책: 사용자 정보를 서버에서 강제로 다시 불러옵니다. ▼▼▼
+                user.reload().addOnCompleteListener { reloadTask ->
+                    if (reloadTask.isSuccessful) {
+                        // 새로고침된 최신 사용자 정보에서 전화번호를 가져옵니다.
+                        val updatedPhoneNumber = Firebase.auth.currentUser?.phoneNumber ?: ""
+
+                        // 최신 전화번호를 Firestore DB에 업데이트합니다.
+                        db.collection("users").document(user.uid)
+                            .update("phoneNumber", updatedPhoneNumber)
+                            .addOnSuccessListener {
+                                Toast.makeText(this, "휴대폰 번호가 성공적으로 인증되었습니다.", Toast.LENGTH_SHORT).show()
+                                setResult(Activity.RESULT_OK)
+                                finish()
+                            }
+                            .addOnFailureListener {
+                                Toast.makeText(this, "DB 업데이트에 실패했습니다.", Toast.LENGTH_SHORT).show()
+                                setResult(Activity.RESULT_OK) // 인증은 성공했으므로 일단 성공으로 처리
+                                finish()
+                            }
+                    } else {
+                        // 새로고침 실패 시
+                        Toast.makeText(this, "사용자 정보 갱신에 실패했습니다.", Toast.LENGTH_SHORT).show()
                         finish()
                     }
-                    .addOnFailureListener {
-                        Toast.makeText(this, "DB 업데이트에 실패했습니다.", Toast.LENGTH_SHORT).show()
-                        setResult(Activity.RESULT_OK) // 인증은 성공했으므로 일단 성공으로 처리
-                        finish()
-                    }
+                }
+                // ▲▲▲ 여기까지가 수정된 부분입니다. ▲▲▲
             } else {
-                Toast.makeText(this, "인증에 실패했습니다: ${task.exception?.message}", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "인증에 실패했습니다: ${linkTask.exception?.message}", Toast.LENGTH_LONG).show()
             }
         }
     }
