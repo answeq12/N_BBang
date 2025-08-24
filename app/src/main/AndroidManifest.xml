@@ -60,6 +60,13 @@
             android:name=".UserProfileActivity"
             android:theme="@style/Theme.Nbang_v1.NoActionBar" />
 
+        <activity
+            android:name=".SelectLocationActivity"
+            android:exported="false" />
+
+        <meta-data
+            android:name="com.naver.maps.map.NCP_KEY_ID"
+            android:value="t0no2o6lq3" />
     </application>
 
 </manifest>

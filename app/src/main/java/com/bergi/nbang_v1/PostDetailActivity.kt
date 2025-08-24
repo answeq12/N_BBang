@@ -1,15 +1,21 @@
 package com.bergi.nbang_v1
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.location.Location
 import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.viewpager2.widget.ViewPager2
-import com.bumptech.glide.Glide
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
@@ -28,13 +34,35 @@ class PostDetailActivity : AppCompatActivity() {
     private lateinit var contentTextView: TextView
     private lateinit var peopleTextView: TextView
     private lateinit var placeTextView: TextView
+    private lateinit var distanceTextView: TextView
     private lateinit var joinButton: Button
     private lateinit var deleteButton: Button
     private lateinit var creatorNameTextView: TextView
     private lateinit var photoViewPager: ViewPager2
     private lateinit var photoCountTextView: TextView
 
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
+
     private val TAG = "PostDetailActivity"
+
+    private val locationPermissionRequest = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        when {
+            permissions.getOrDefault(Manifest.permission.ACCESS_FINE_LOCATION, false) -> {
+                // Fine location access granted.
+                getCurrentLocation()
+            }
+            permissions.getOrDefault(Manifest.permission.ACCESS_COARSE_LOCATION, false) -> {
+                // Only approximate location access granted.
+                getCurrentLocation()
+            }
+            else -> {
+                // No location access granted.
+                distanceTextView.visibility = View.GONE
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,6 +70,7 @@ class PostDetailActivity : AppCompatActivity() {
 
         firestore = FirebaseFirestore.getInstance()
         postId = intent.getStringExtra("POST_ID")
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
         // UI 요소 초기화
         categoryTextView = findViewById(R.id.textViewDetailCategory)
@@ -50,6 +79,7 @@ class PostDetailActivity : AppCompatActivity() {
         contentTextView = findViewById(R.id.textViewDetailContent)
         peopleTextView = findViewById(R.id.textViewDetailPeople)
         placeTextView = findViewById(R.id.textViewDetailPlace)
+        distanceTextView = findViewById(R.id.textViewDistance)
         joinButton = findViewById(R.id.buttonJoin)
         deleteButton = findViewById(R.id.buttonDelete)
         creatorNameTextView = findViewById(R.id.textViewCreatorNickname)
@@ -81,6 +111,7 @@ class PostDetailActivity : AppCompatActivity() {
                     currentPost = document.toObject(Post::class.java)
                     if (currentPost != null) {
                         updateUI(currentPost!!)
+                        checkLocationPermission()
                     } else {
                         handleLoadError()
                     }
@@ -99,7 +130,7 @@ class PostDetailActivity : AppCompatActivity() {
         categoryTextView.text = post.category
         contentTextView.text = post.content
         peopleTextView.text = "${post.currentPeople} / ${post.totalPeople}명"
-        placeTextView.text = post.meetingPlace
+        placeTextView.text = post.meetingPlaceName
         timestampTextView.text = formatTimestamp(post.timestamp)
         creatorNameTextView.text = post.creatorName
 
@@ -126,6 +157,57 @@ class PostDetailActivity : AppCompatActivity() {
         } else {
             deleteButton.visibility = View.GONE
         }
+    }
+
+    private fun checkLocationPermission() {
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            getCurrentLocation()
+        } else {
+            locationPermissionRequest.launch(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+            )
+        }
+    }
+
+    private fun getCurrentLocation() {
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            return
+        }
+        fusedLocationClient.lastLocation
+            .addOnSuccessListener { location: Location? ->
+                if (location != null && currentPost != null) {
+                    val distance = calculateDistance(
+                        location.latitude,
+                        location.longitude,
+                        currentPost!!.latitude,
+                        currentPost!!.longitude
+                    )
+                    distanceTextView.text = "약 ${String.format("%.1f", distance / 1000)}km 떨어져 있어요"
+                    distanceTextView.visibility = View.VISIBLE
+                } else {
+                    distanceTextView.visibility = View.GONE
+                }
+            }
+    }
+
+    private fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Float {
+        val results = FloatArray(1)
+        Location.distanceBetween(lat1, lon1, lat2, lon2, results)
+        return results[0]
     }
 
     private fun showDeleteConfirmationDialog() {
