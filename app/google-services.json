@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "979223132862-s6i5vnu651c3nmctvbm57dm6kskiu5gl.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.bergi.nbang_v1",
+            "certificate_hash": "1d0654d34a6081325c830efbcf6ecc10156c1901"
+          }
+        },
+        {
           "client_id": "979223132862-8aiv5g67eklhs2luetcuj9lniiti4kfc.apps.googleusercontent.com",
           "client_type": 3
         }
