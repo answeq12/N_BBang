@@ -1,5 +1,6 @@
 package com.bergi.nbang_v1
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -7,15 +8,14 @@ import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
 import androidx.viewpager2.widget.ViewPager2
-import com.bumptech.glide.Glide
+import com.google.android.material.card.MaterialCardView
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
 import java.util.Date
 
-class PostDetailActivity : AppCompatActivity() {
+class PostDetailActivity : BaseActivity() { // BaseActivity 상속으로 애니메이션 복구
 
     private lateinit var firestore: FirebaseFirestore
     private var postId: String? = null
@@ -30,7 +30,8 @@ class PostDetailActivity : AppCompatActivity() {
     private lateinit var placeTextView: TextView
     private lateinit var joinButton: Button
     private lateinit var deleteButton: Button
-    private lateinit var creatorNameTextView: TextView
+    private lateinit var creatorNicknameTextView: TextView // 변수 이름 통일
+    private lateinit var creatorProfileCard: MaterialCardView // 프로필 카드 변수 추가
     private lateinit var photoViewPager: ViewPager2
     private lateinit var photoCountTextView: TextView
 
@@ -52,7 +53,8 @@ class PostDetailActivity : AppCompatActivity() {
         placeTextView = findViewById(R.id.textViewDetailPlace)
         joinButton = findViewById(R.id.buttonJoin)
         deleteButton = findViewById(R.id.buttonDelete)
-        creatorNameTextView = findViewById(R.id.textViewCreatorNickname)
+        creatorNicknameTextView = findViewById(R.id.textViewCreatorNickname)
+        creatorProfileCard = findViewById(R.id.cardViewCreatorProfile) // 프로필 카드 초기화 추가
         photoViewPager = findViewById(R.id.photoViewPager)
         photoCountTextView = findViewById(R.id.photoCountTextView)
 
@@ -101,7 +103,18 @@ class PostDetailActivity : AppCompatActivity() {
         peopleTextView.text = "${post.currentPeople} / ${post.totalPeople}명"
         placeTextView.text = post.meetingPlace
         timestampTextView.text = formatTimestamp(post.timestamp)
-        creatorNameTextView.text = post.creatorName
+
+        // 1. Firestore에서 작성자 닉네임을 불러오는 함수 호출
+        loadCreatorInfo(post.creatorUid)
+
+        // 2. 프로필 카드에 클릭 리스너 설정
+        creatorProfileCard.setOnClickListener {
+            val intent = Intent(this, UserProfileActivity::class.java)
+            intent.putExtra("USER_ID", post.creatorUid)
+            startActivity(intent)
+            overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
+        }
+
 
         if (post.photoUrls.isNotEmpty()) {
             photoViewPager.adapter = PhotoAdapter(post.photoUrls)
@@ -128,6 +141,22 @@ class PostDetailActivity : AppCompatActivity() {
         }
     }
 
+    // --- 이 함수를 다시 추가했습니다 ---
+    private fun loadCreatorInfo(creatorId: String) {
+        firestore.collection("users").document(creatorId).get()
+            .addOnSuccessListener { document ->
+                if (document != null && document.exists()) {
+                    val nickname = document.getString("nickname") ?: "알 수 없음"
+                    creatorNicknameTextView.text = nickname
+                } else {
+                    creatorNicknameTextView.text = "알 수 없음"
+                }
+            }
+            .addOnFailureListener {
+                creatorNicknameTextView.text = "정보 로딩 실패"
+            }
+    }
+
     private fun showDeleteConfirmationDialog() {
         AlertDialog.Builder(this)
             .setTitle("게시글 삭제")
@@ -135,10 +164,7 @@ class PostDetailActivity : AppCompatActivity() {
             .setPositiveButton("삭제") { _, _ ->
                 deletePost()
             }
-            // 다른 문법으로 변경된 부분
-            .setNegativeButton("취소") { _, _ ->
-                // 취소 버튼을 눌렀을 때 아무것도 하지 않습니다.
-            }
+            .setNegativeButton("취소", null)
             .setIcon(android.R.drawable.ic_dialog_alert)
             .show()
     }
