@@ -56,9 +56,4 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
-
-    // 코루틴: 비동기 작업을 쉽게 처리하기 위해 사용
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
-// Gson: JSON 문자열을 Kotlin 객체로 쉽게 변환하기 위해 사용
-    implementation("com.google.code.gson:gson:2.10.1")
 }
