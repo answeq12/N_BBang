@@ -43,7 +43,11 @@ class PostAdapter(
                     .into(thumbnailImageView)
                 thumbnailImageView.visibility = View.VISIBLE
             } else {
-                thumbnailImageView.visibility = View.GONE
+                Glide.with(itemView.context)
+                    .load(R.drawable.n_1_logo) // 기본 이미지 로드
+                    .centerCrop()
+                    .into(thumbnailImageView)
+                thumbnailImageView.visibility = View.VISIBLE
             }
 
             // 아이템 뷰가 클릭되었을 때, 생성자에서 받은 onItemClick 함수를 실행합니다.
