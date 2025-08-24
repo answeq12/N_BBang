@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    id("kotlin-kapt")
     alias(libs.plugins.google.gms.google.services)
 }
 
@@ -49,11 +50,17 @@ dependencies {
 
     // Firebase 및 Google Play Services 라이브러리들
     implementation("com.google.firebase:firebase-auth-ktx")
-    implementation("com.google.firebase:firebase-firestore-ktx") // 'FirebaseFirestore' 오류 해결
+    implementation("com.google.firebase:firebase-firestore-ktx")
     implementation("com.google.android.gms:play-services-location:21.2.0")
-    implementation("com.google.android.gms:play-services-auth:21.2.0") // 'GoogleSignIn' 오류 해결
-
+    implementation("com.google.android.gms:play-services-auth:21.2.0")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+
+    // Firebase Storage 라이브러리
+    implementation("com.google.firebase:firebase-storage-ktx")
+
+    // Glide 라이브러리
+    implementation("com.github.bumptech.glide:glide:4.12.0")
+    kapt("com.github.bumptech.glide:compiler:4.12.0")
 }
