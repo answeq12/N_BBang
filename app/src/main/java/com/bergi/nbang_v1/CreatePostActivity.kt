@@ -9,7 +9,6 @@ import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Spinner
-import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.gms.tasks.Tasks
@@ -20,16 +19,7 @@ import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.ktx.storage
 import androidx.activity.result.contract.ActivityResultContracts
-import com.firebase.geofire.GeoFireUtils
-import com.firebase.geofire.GeoLocation
-import com.google.firebase.firestore.GeoPoint
 import java.util.UUID
-
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
 
 class CreatePostActivity : AppCompatActivity() {
 
@@ -41,23 +31,12 @@ class CreatePostActivity : AppCompatActivity() {
     private lateinit var editTextTitle: EditText
     private lateinit var editTextContent: EditText
     private lateinit var editTextPeople: EditText
-    private lateinit var buttonSelectPlace: Button
-    private lateinit var textViewSelectedPlace: TextView
+    private lateinit var editTextPlace: EditText
     private lateinit var createButton: Button
     private lateinit var selectPhotoButton: Button
 
     private val TAG = "CreatePostActivity"
     private val selectedPhotos = mutableListOf<Uri>()
-    private var selectedLatitude: Double = 0.0
-    private var selectedLongitude: Double = 0.0
-
-    private val naverApiService: NaverApiService by lazy {
-        val retrofit = Retrofit.Builder()
-            .baseUrl("https://naveropenapi.apigw.ntruss.com/")
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-        retrofit.create(NaverApiService::class.java)
-    }
 
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
@@ -84,19 +63,6 @@ class CreatePostActivity : AppCompatActivity() {
             }
         }
 
-    private val selectLocationLauncher =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode == RESULT_OK) {
-                val latitude = result.data?.getDoubleExtra("latitude", 0.0)
-                val longitude = result.data?.getDoubleExtra("longitude", 0.0)
-                if (latitude != null && longitude != null) {
-                    selectedLatitude = latitude
-                    selectedLongitude = longitude
-                    getAddressFromCoordinates(longitude, latitude)
-                }
-            }
-        }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_create_post)
@@ -109,8 +75,7 @@ class CreatePostActivity : AppCompatActivity() {
         editTextTitle = findViewById(R.id.editTextPostTitle)
         editTextContent = findViewById(R.id.editTextPostContent)
         editTextPeople = findViewById(R.id.editTextTotalPeople)
-        buttonSelectPlace = findViewById(R.id.buttonSelectPlace)
-        textViewSelectedPlace = findViewById(R.id.textViewSelectedPlace)
+        editTextPlace = findViewById(R.id.editTextMeetingPlace)
         createButton = findViewById(R.id.buttonCreatePost)
         selectPhotoButton = findViewById(R.id.selectPhotoButton)
 
@@ -120,11 +85,6 @@ class CreatePostActivity : AppCompatActivity() {
             requestPermissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
         }
 
-        buttonSelectPlace.setOnClickListener {
-            val intent = Intent(this, SelectLocationActivity::class.java)
-            selectLocationLauncher.launch(intent)
-        }
-
         createButton.setOnClickListener {
             if (selectedPhotos.isEmpty()) {
                 createPost(emptyList())
@@ -132,35 +92,6 @@ class CreatePostActivity : AppCompatActivity() {
                 uploadPhotos()
             }
         }
-    }
-
-    private fun getAddressFromCoordinates(longitude: Double, latitude: Double) {
-        val coords = "$longitude,$latitude"
-        val call = naverApiService.reverseGeocode("t0no2o6lq3", "Yf8MWlbYLudKmeEu8mjQSRF7wGTMCZAdAoQ3cAHq", coords)
-        call.enqueue(object : Callback<ReverseGeocodingResponse> {
-            override fun onResponse(
-                call: Call<ReverseGeocodingResponse>,
-                response: Response<ReverseGeocodingResponse>
-            ) {
-                if (response.isSuccessful) {
-                    val address = response.body()?.results?.firstOrNull()
-                    if (address != null) {
-                        val addressName = "${address.region.area1.name} ${address.region.area2.name} ${address.land.name} ${address.land.number1}"
-                        textViewSelectedPlace.text = addressName
-                    } else {
-                        textViewSelectedPlace.text = "주소를 찾을 수 없습니다."
-                    }
-                } else {
-                    Log.e(TAG, "Reverse geocoding failed: ${response.errorBody()?.string()}")
-                    textViewSelectedPlace.text = "주소 변환 실패"
-                }
-            }
-
-            override fun onFailure(call: Call<ReverseGeocodingResponse>, t: Throwable) {
-                Log.e(TAG, "Reverse geocoding failed", t)
-                textViewSelectedPlace.text = "주소 변환 실패"
-            }
-        })
     }
 
     private fun setupSpinner() {
@@ -181,7 +112,9 @@ class CreatePostActivity : AppCompatActivity() {
         createButton.isEnabled = false
         val uploadTasks = selectedPhotos.map { uri ->
             val photoRef = storage.reference.child("images/${UUID.randomUUID()}.jpg")
+
             val inputStream = contentResolver.openInputStream(uri)
+
             photoRef.putStream(inputStream!!).continueWithTask { task ->
                 if (!task.isSuccessful) {
                     task.exception?.let { throw it }
@@ -211,30 +144,26 @@ class CreatePostActivity : AppCompatActivity() {
         }
 
         val creatorName = currentUser.displayName ?: "익명"
+
         val category = spinnerCategory.selectedItem.toString()
         val title = editTextTitle.text.toString().trim()
         val content = editTextContent.text.toString().trim()
         val peopleStr = editTextPeople.text.toString().trim()
-        val placeName = textViewSelectedPlace.text.toString().trim()
+        val place = editTextPlace.text.toString().trim()
 
-        if (title.isEmpty() || content.isEmpty() || peopleStr.isEmpty() || placeName.isEmpty() || selectedLatitude == 0.0 || selectedLongitude == 0.0) {
+        if (title.isEmpty() || content.isEmpty() || peopleStr.isEmpty() || place.isEmpty()) {
             Toast.makeText(this, "모든 항목을 입력해주세요.", Toast.LENGTH_SHORT).show()
             createButton.isEnabled = true
             return
         }
 
         val totalPeople = peopleStr.toIntOrNull()
+
         if (totalPeople == null || totalPeople <= 1) {
             Toast.makeText(this, "인원(2명 이상)을 올바르게 입력해주세요.", Toast.LENGTH_SHORT).show()
             createButton.isEnabled = true
             return
         }
-
-        // --- 이 부분을 수정했습니다 ---
-        // 1. GeoPoint 객체 생성
-        val meetingLocation = GeoPoint(selectedLatitude, selectedLongitude)
-        // 2. GeoHash 값 계산
-        val geohash = GeoFireUtils.getGeoHashForLocation(GeoLocation(selectedLatitude, selectedLongitude))
 
         val newPost = Post(
             title = title,
@@ -243,19 +172,17 @@ class CreatePostActivity : AppCompatActivity() {
             creatorName = creatorName,
             photoUrls = photoUrls,
             totalPeople = totalPeople,
-            meetingPlaceName = placeName,
-            meetingLocation = meetingLocation,
-            geohash = geohash, // GeoHash 값 저장
+            meetingPlace = place,
             creatorUid = currentUser.uid,
             participants = listOf(currentUser.uid)
         )
-        // --- ---
 
         firestore.collection("posts")
             .add(newPost)
             .addOnSuccessListener { documentReference ->
                 Log.d(TAG, "Post uploaded successfully: ${documentReference.id}")
                 Toast.makeText(this, "게시글이 등록되었습니다.", Toast.LENGTH_SHORT).show()
+
                 val intent = Intent(this, PostDetailActivity::class.java)
                 intent.putExtra("POST_ID", documentReference.id)
                 startActivity(intent)
