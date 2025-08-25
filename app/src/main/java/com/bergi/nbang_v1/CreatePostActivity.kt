@@ -20,6 +20,9 @@ import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.ktx.storage
 import androidx.activity.result.contract.ActivityResultContracts
+import com.firebase.geofire.GeoFireUtils
+import com.firebase.geofire.GeoLocation
+import com.google.firebase.firestore.GeoPoint
 import java.util.UUID
 
 import retrofit2.Call
@@ -178,9 +181,7 @@ class CreatePostActivity : AppCompatActivity() {
         createButton.isEnabled = false
         val uploadTasks = selectedPhotos.map { uri ->
             val photoRef = storage.reference.child("images/${UUID.randomUUID()}.jpg")
-
             val inputStream = contentResolver.openInputStream(uri)
-
             photoRef.putStream(inputStream!!).continueWithTask { task ->
                 if (!task.isSuccessful) {
                     task.exception?.let { throw it }
@@ -210,7 +211,6 @@ class CreatePostActivity : AppCompatActivity() {
         }
 
         val creatorName = currentUser.displayName ?: "익명"
-
         val category = spinnerCategory.selectedItem.toString()
         val title = editTextTitle.text.toString().trim()
         val content = editTextContent.text.toString().trim()
@@ -224,12 +224,17 @@ class CreatePostActivity : AppCompatActivity() {
         }
 
         val totalPeople = peopleStr.toIntOrNull()
-
         if (totalPeople == null || totalPeople <= 1) {
             Toast.makeText(this, "인원(2명 이상)을 올바르게 입력해주세요.", Toast.LENGTH_SHORT).show()
             createButton.isEnabled = true
             return
         }
+
+        // --- 이 부분을 수정했습니다 ---
+        // 1. GeoPoint 객체 생성
+        val meetingLocation = GeoPoint(selectedLatitude, selectedLongitude)
+        // 2. GeoHash 값 계산
+        val geohash = GeoFireUtils.getGeoHashForLocation(GeoLocation(selectedLatitude, selectedLongitude))
 
         val newPost = Post(
             title = title,
@@ -239,18 +244,18 @@ class CreatePostActivity : AppCompatActivity() {
             photoUrls = photoUrls,
             totalPeople = totalPeople,
             meetingPlaceName = placeName,
-            latitude = selectedLatitude,
-            longitude = selectedLongitude,
+            meetingLocation = meetingLocation,
+            geohash = geohash, // GeoHash 값 저장
             creatorUid = currentUser.uid,
             participants = listOf(currentUser.uid)
         )
+        // --- ---
 
         firestore.collection("posts")
             .add(newPost)
             .addOnSuccessListener { documentReference ->
                 Log.d(TAG, "Post uploaded successfully: ${documentReference.id}")
                 Toast.makeText(this, "게시글이 등록되었습니다.", Toast.LENGTH_SHORT).show()
-
                 val intent = Intent(this, PostDetailActivity::class.java)
                 intent.putExtra("POST_ID", documentReference.id)
                 startActivity(intent)

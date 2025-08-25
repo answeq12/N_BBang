@@ -1,6 +1,7 @@
 package com.bergi.nbang_v1
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Bundle
@@ -50,15 +51,12 @@ class PostDetailActivity : AppCompatActivity() {
     ) { permissions ->
         when {
             permissions.getOrDefault(Manifest.permission.ACCESS_FINE_LOCATION, false) -> {
-                // Fine location access granted.
                 getCurrentLocation()
             }
             permissions.getOrDefault(Manifest.permission.ACCESS_COARSE_LOCATION, false) -> {
-                // Only approximate location access granted.
                 getCurrentLocation()
             }
             else -> {
-                // No location access granted.
                 distanceTextView.visibility = View.GONE
             }
         }
@@ -189,18 +187,21 @@ class PostDetailActivity : AppCompatActivity() {
         }
         fusedLocationClient.lastLocation
             .addOnSuccessListener { location: Location? ->
-                if (location != null && currentPost != null) {
+                // --- 이 부분을 수정하여 오류를 해결합니다 ---
+                val postLocation = currentPost?.meetingLocation
+                if (location != null && postLocation != null) {
                     val distance = calculateDistance(
                         location.latitude,
                         location.longitude,
-                        currentPost!!.latitude,
-                        currentPost!!.longitude
+                        postLocation.latitude,  // post.meetingLocation.latitude로 변경
+                        postLocation.longitude // post.meetingLocation.longitude로 변경
                     )
                     distanceTextView.text = "약 ${String.format("%.1f", distance / 1000)}km 떨어져 있어요"
                     distanceTextView.visibility = View.VISIBLE
                 } else {
                     distanceTextView.visibility = View.GONE
                 }
+                // --- 여기까지 수정 ---
             }
     }
 
@@ -217,10 +218,7 @@ class PostDetailActivity : AppCompatActivity() {
             .setPositiveButton("삭제") { _, _ ->
                 deletePost()
             }
-            // 다른 문법으로 변경된 부분
-            .setNegativeButton("취소") { _, _ ->
-                // 취소 버튼을 눌렀을 때 아무것도 하지 않습니다.
-            }
+            .setNegativeButton("취소", null)
             .setIcon(android.R.drawable.ic_dialog_alert)
             .show()
     }
@@ -257,6 +255,7 @@ class PostDetailActivity : AppCompatActivity() {
             hours > 0 -> "${hours}시간 전"
             minutes > 0 -> "${minutes}분 전"
             else -> "방금 전"
+
         }
     }
 }

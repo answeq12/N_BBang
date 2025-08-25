@@ -18,6 +18,7 @@ import androidx.core.content.ContextCompat
 import com.google.android.gms.location.*
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.GeoPoint // GeoPoint import 추가
 import com.google.firebase.ktx.Firebase
 import java.util.Locale
 
@@ -30,6 +31,7 @@ class VerifyLocationActivity : BaseActivity() {
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var db: FirebaseFirestore
     private var currentLocationString: String? = null
+    private var currentLocation: Location? = null // 현재 위치 좌표를 저장할 변수 추가
     private val TAG = "VerifyLocationActivity"
 
     private val locationPermissionRequest = registerForActivityResult(
@@ -77,7 +79,7 @@ class VerifyLocationActivity : BaseActivity() {
 
         val locationRequest = LocationRequest.create().apply {
             priority = Priority.PRIORITY_HIGH_ACCURACY
-            numUpdates = 1 // 한 번만 위치를 받아옴
+            numUpdates = 1
         }
 
         val locationCallback = object : LocationCallback() {
@@ -92,6 +94,7 @@ class VerifyLocationActivity : BaseActivity() {
     }
 
     private fun updateUIToShowLocation(location: Location) {
+        this.currentLocation = location // --- 현재 위치 좌표를 변수에 저장 ---
         val geocoder = Geocoder(this, Locale.KOREA)
         try {
             val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
@@ -99,14 +102,12 @@ class VerifyLocationActivity : BaseActivity() {
                 handleFailure("주소 정보를 찾을 수 없습니다."); return
             }
             val address = addresses[0]
-            val sido = address.adminArea      // 예: "대구광역시"
-            val sigungu = address.locality ?: address.subLocality // 예: "북구"
-            val dong = address.thoroughfare ?: address.subLocality  // 예: "태전동"
+            val sido = address.adminArea
+            val sigungu = address.locality ?: address.subLocality
+            val dong = address.thoroughfare ?: address.subLocality
 
             if (sido != null && sigungu != null && dong != null) {
-                // Firestore에 저장할 전체 주소
                 currentLocationString = "$sido $sigungu $dong"
-                // 화면에 표시할 텍스트 (시/군/구 + 동)
                 val displayText = "$sigungu $dong"
 
                 locationTextView.text = "현재 위치는\n'$displayText' 입니다."
@@ -124,7 +125,7 @@ class VerifyLocationActivity : BaseActivity() {
 
     private fun saveLocationToFirestore() {
         val user = Firebase.auth.currentUser
-        if (user == null || currentLocationString == null) {
+        if (user == null || currentLocationString == null || currentLocation == null) {
             Toast.makeText(this, "오류가 발생했습니다.", Toast.LENGTH_SHORT).show()
             return
         }
@@ -132,8 +133,14 @@ class VerifyLocationActivity : BaseActivity() {
         confirmButton.isEnabled = false
         progressBar.visibility = View.VISIBLE
 
+        // --- Firestore에 저장할 데이터에 좌표(GeoPoint)를 추가합니다 ---
+        val locationData = mapOf(
+            "location" to currentLocationString,
+            "locationPoint" to GeoPoint(currentLocation!!.latitude, currentLocation!!.longitude)
+        )
+
         db.collection("users").document(user.uid)
-            .update("location", currentLocationString)
+            .update(locationData) // 주소 이름과 좌표를 함께 업데이트
             .addOnSuccessListener {
                 Toast.makeText(this, "'$currentLocationString' 인증 완료!", Toast.LENGTH_SHORT).show()
                 setResult(Activity.RESULT_OK)
