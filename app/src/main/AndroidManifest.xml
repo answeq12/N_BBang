@@ -59,7 +59,9 @@
         <activity
             android:name=".UserProfileActivity"
             android:theme="@style/Theme.Nbang_v1.NoActionBar" />
-
+        <activity
+            android:name=".ChatRoomActivity"
+            android:exported="false" />
     </application>
 
 </manifest>
