@@ -132,6 +132,12 @@ class PostDetailActivity : AppCompatActivity() {
         timestampTextView.text = formatTimestamp(post.timestamp)
         creatorNameTextView.text = post.creatorName
 
+        creatorNameTextView.setOnClickListener {
+            val intent = Intent(this, UserProfileActivity::class.java)
+            intent.putExtra("USER_ID", post.creatorUid)
+            startActivity(intent)
+        }
+
         if (post.photoUrls.isNotEmpty()) {
             photoViewPager.adapter = PhotoAdapter(post.photoUrls)
             photoViewPager.visibility = View.VISIBLE
@@ -201,7 +207,6 @@ class PostDetailActivity : AppCompatActivity() {
                 } else {
                     distanceTextView.visibility = View.GONE
                 }
-                // --- 여기까지 수정 ---
             }
     }
 
