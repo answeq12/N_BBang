@@ -3,8 +3,10 @@ package com.bergi.nbang_v1
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView // ImageView import
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.bumptech.glide.Glide // Glide import
 import java.util.Date
 
 // RecyclerView.Adapter를 상속받아 Post 데이터를 처리하는 어댑터입니다.
@@ -22,6 +24,7 @@ class PostAdapter(
         private val people: TextView = itemView.findViewById(R.id.textViewPostPeople)
         private val meetingPlace: TextView = itemView.findViewById(R.id.textViewPostMeetingPlace)
         private val timestamp: TextView = itemView.findViewById(R.id.textViewPostTimestamp)
+        private val thumbnailImageView: ImageView = itemView.findViewById(R.id.imageViewThumbnail) // 썸네일 ImageView 연결
 
         // bind 함수는 Post 객체 하나를 받아 뷰에 데이터를 채워넣는 역할을 합니다.
         fun bind(post: Post) {
@@ -29,8 +32,23 @@ class PostAdapter(
             status.text = post.status
             title.text = post.title
             people.text = "${post.currentPeople} / ${post.totalPeople}명"
-            meetingPlace.text = post.meetingPlace
+            meetingPlace.text = post.meetingPlaceName
             timestamp.text = formatTimestamp(post.timestamp)
+
+            // 사진이 있을 경우에만 썸네일 표시
+            if (post.photoUrls.isNotEmpty()) {
+                Glide.with(itemView.context)
+                    .load(post.photoUrls[0])
+                    .centerCrop()
+                    .into(thumbnailImageView)
+                thumbnailImageView.visibility = View.VISIBLE
+            } else {
+                Glide.with(itemView.context)
+                    .load(R.drawable.n_1_logo) // 기본 이미지 로드
+                    .centerCrop()
+                    .into(thumbnailImageView)
+                thumbnailImageView.visibility = View.VISIBLE
+            }
 
             // 아이템 뷰가 클릭되었을 때, 생성자에서 받은 onItemClick 함수를 실행합니다.
             itemView.setOnClickListener {

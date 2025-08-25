@@ -14,31 +14,44 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="16dp">
+        android:padding="12dp">
 
-        <!-- 카테고리 (예: 음식 배달, 생필품) -->
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/imageViewThumbnail"
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            android:layout_marginEnd="12dp"
+            android:scaleType="centerCrop"
+            android:visibility="gone"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Medium"
+            tools:src="@tools:sample/backgrounds/scenic"
+            tools:visibility="visible" />
+
         <TextView
             android:id="@+id/textViewPostCategory"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
             android:background="@drawable/background_category_chip"
-            android:paddingStart="8dp"
-            android:paddingTop="4dp"
-            android:paddingEnd="8dp"
-            android:paddingBottom="4dp"
+            android:paddingStart="6dp"
+            android:paddingTop="2dp"
+            android:paddingEnd="6dp"
+            android:paddingBottom="2dp"
             android:textColor="?attr/colorPrimary"
-            android:textSize="12sp"
+            android:textSize="10sp"
             android:textStyle="bold"
-            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/imageViewThumbnail"
             app:layout_constraintTop_toTopOf="parent"
             tools:text="음식 배달" />
 
-        <!-- 모집 상태 (예: 모집중, 모집완료) -->
         <TextView
             android:id="@+id/textViewPostStatus"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="12sp"
+            android:textSize="10sp"
             android:textStyle="bold"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="@+id/textViewPostCategory"
@@ -46,63 +59,50 @@
             tools:text="모집중"
             tools:textColor="@color/status_recruiting" />
 
-        <!-- 게시글 제목 -->
         <TextView
             android:id="@+id/textViewPostTitle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="4dp"
             android:ellipsize="end"
-            android:maxLines="2"
+            android:maxLines="1"
             android:textAppearance="?attr/textAppearanceListItem"
-            android:textSize="18sp"
+            android:textSize="16sp"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintStart_toStartOf="@+id/textViewPostCategory"
             app:layout_constraintTop_toBottomOf="@+id/textViewPostCategory"
             tools:text="BHC 뿌링클 치킨 같이 시키실 분 구해요!" />
 
-        <!-- 구분선 -->
-        <View
-            android:id="@+id/divider"
-            android:layout_width="0dp"
-            android:layout_height="1dp"
-            android:layout_marginTop="12dp"
-            android:background="?android:attr/listDivider"
-            app:layout_constraintTop_toBottomOf="@+id/textViewPostTitle"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"/>
-
-        <!-- 참여 인원 -->
         <ImageView
             android:id="@+id/iconPeople"
-            android:layout_width="16dp"
-            android:layout_height="16dp"
-            android:layout_marginTop="12dp"
+            android:layout_width="14dp"
+            android:layout_height="14dp"
+            android:layout_marginTop="8dp"
             android:src="@drawable/ic_people"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/divider"
+            app:layout_constraintStart_toStartOf="@+id/textViewPostTitle"
+            app:layout_constraintTop_toBottomOf="@+id/textViewPostTitle"
             app:tint="?android:attr/textColorSecondary"/>
 
         <TextView
             android:id="@+id/textViewPostPeople"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
+            android:layout_marginStart="4dp"
             android:textAppearance="?attr/textAppearanceBody2"
             android:textColor="?android:attr/textColorSecondary"
+            android:textSize="12sp"
             app:layout_constraintBottom_toBottomOf="@+id/iconPeople"
             app:layout_constraintStart_toEndOf="@+id/iconPeople"
             app:layout_constraintTop_toTopOf="@+id/iconPeople"
             tools:text="2 / 4명" />
 
-        <!-- 만날 장소 -->
         <ImageView
             android:id="@+id/iconLocation"
-            android:layout_width="16dp"
-            android:layout_height="16dp"
-            android:layout_marginTop="8dp"
+            android:layout_width="14dp"
+            android:layout_height="14dp"
+            android:layout_marginTop="4dp"
             android:src="@drawable/ic_location"
-            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintStart_toStartOf="@+id/textViewPostTitle"
             app:layout_constraintTop_toBottomOf="@+id/iconPeople"
             app:tint="?android:attr/textColorSecondary"/>
 
@@ -110,23 +110,22 @@
             android:id="@+id/textViewPostMeetingPlace"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
+            android:layout_marginStart="4dp"
             android:textAppearance="?attr/textAppearanceBody2"
             android:textColor="?android:attr/textColorSecondary"
+            android:textSize="12sp"
             app:layout_constraintBottom_toBottomOf="@+id/iconLocation"
             app:layout_constraintStart_toEndOf="@+id/iconLocation"
             app:layout_constraintTop_toTopOf="@+id/iconLocation"
             app:layout_constraintEnd_toEndOf="parent"
             tools:text="강남역 10번 출구 앞" />
 
-
-        <!-- 작성 시간 -->
         <TextView
             android:id="@+id/textViewPostTimestamp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textColor="?android:attr/textColorSecondary"
-            android:textSize="12sp"
+            android:textSize="10sp"
             app:layout_constraintBottom_toBottomOf="@+id/textViewPostPeople"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="@+id/textViewPostPeople"

@@ -1,6 +1,9 @@
 package com.bergi.nbang_v1
 
+import android.Manifest
+import android.app.Activity // Activity 임포트 추가
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.widget.ArrayAdapter
@@ -8,25 +11,100 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.Spinner
 import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher // ActivityResultLauncher 임포트 추가
 import androidx.appcompat.app.AppCompatActivity
+import com.google.android.gms.tasks.Tasks
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.GeoPoint // GeoPoint 임포트 추가
 import com.google.firebase.ktx.Firebase
+import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.ktx.storage
+import androidx.activity.result.contract.ActivityResultContracts
+import com.firebase.geofire.GeoFireUtils // GeoFire 유틸리티 추가
+import com.firebase.geofire.GeoLocation   // GeoFire 유틸리티 추가
+import java.io.InputStream
+import java.util.UUID
 
 class CreatePostActivity : AppCompatActivity() {
 
     private lateinit var auth: FirebaseAuth
     private lateinit var firestore: FirebaseFirestore
+    private lateinit var storage: FirebaseStorage
 
     private lateinit var spinnerCategory: Spinner
     private lateinit var editTextTitle: EditText
     private lateinit var editTextContent: EditText
     private lateinit var editTextPeople: EditText
-    private lateinit var editTextPlace: EditText
+    private lateinit var editTextPlace: EditText // 사용자가 직접 입력하거나 지도에서 선택한 장소 이름
     private lateinit var createButton: Button
+    private lateinit var selectPhotoButton: Button
+    private lateinit var buttonSelectPlace: Button // 지도에서 장소 선택 버튼
 
     private val TAG = "CreatePostActivity"
+    private val selectedPhotos = mutableListOf<Uri>()
+    private var selectedMeetingLocation: GeoPoint? = null // 지도에서 선택된 좌표
+
+    private val requestPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
+            if (isGranted) {
+                launchImagePicker()
+            } else {
+                Toast.makeText(this, "갤러리 접근 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+    private val pickImagesLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == RESULT_OK) {
+                selectedPhotos.clear()
+                result.data?.clipData?.let { clipData ->
+                    for (i in 0 until clipData.itemCount) {
+                        val uri = clipData.getItemAt(i).uri
+                        selectedPhotos.add(uri)
+                    }
+                } ?: result.data?.data?.let { uri ->
+                    selectedPhotos.add(uri)
+                }
+                Toast.makeText(this, "${selectedPhotos.size}장의 사진이 선택되었습니다.", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+    // SearchAddressActivity 결과를 처리하기 위한 ActivityResultLauncher
+    private val searchAddressLauncher: ActivityResultLauncher<Intent> =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                val data: Intent? = result.data
+                if (data != null) {
+                    val placeName = data.getStringExtra("placeName")
+                    val addressName = data.getStringExtra("addressName")
+                    val latitude = data.getDoubleExtra("latitude", 0.0)
+                    val longitude = data.getDoubleExtra("longitude", 0.0)
+
+                    if (placeName != null && addressName != null) {
+                        editTextPlace.setText("$placeName ($addressName)")
+                        if (latitude != 0.0 || longitude != 0.0) {
+                            selectedMeetingLocation = GeoPoint(latitude, longitude)
+                            Log.d(TAG, "Selected place: $placeName ($addressName), Lat: $latitude, Lng: $longitude")
+                        } else {
+                            selectedMeetingLocation = null
+                            Log.d(TAG, "Selected place (default/no coordinates): $placeName ($addressName)")
+                        }
+                    } else {
+                        selectedMeetingLocation = null
+                        editTextPlace.text = null
+                        Log.d(TAG, "SearchAddressActivity result missing placeName or addressName.")
+                    }
+                } else {
+                    selectedMeetingLocation = null
+                    editTextPlace.text = null
+                    Log.d(TAG, "SearchAddressActivity result data is null.")
+                }
+            } else {
+                Log.d(TAG, "SearchAddressActivity cancelled or failed. ResultCode: ${result.resultCode}")
+            }
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,6 +112,7 @@ class CreatePostActivity : AppCompatActivity() {
 
         auth = Firebase.auth
         firestore = FirebaseFirestore.getInstance()
+        storage = Firebase.storage
 
         spinnerCategory = findViewById(R.id.spinnerCategory)
         editTextTitle = findViewById(R.id.editTextPostTitle)
@@ -41,11 +120,27 @@ class CreatePostActivity : AppCompatActivity() {
         editTextPeople = findViewById(R.id.editTextTotalPeople)
         editTextPlace = findViewById(R.id.editTextMeetingPlace)
         createButton = findViewById(R.id.buttonCreatePost)
+        selectPhotoButton = findViewById(R.id.selectPhotoButton)
+        buttonSelectPlace = findViewById(R.id.buttonSelectPlace)
 
         setupSpinner()
 
+        selectPhotoButton.setOnClickListener {
+            requestPermissionLauncher.launch(Manifest.permission.READ_EXTERNAL_STORAGE)
+        }
+
+        buttonSelectPlace.setOnClickListener {
+            Log.d(TAG, "buttonSelectPlace clicked")
+            val intent = Intent(this, SelectLocationActivity::class.java)
+            searchAddressLauncher.launch(intent)
+        }
+
         createButton.setOnClickListener {
-            uploadPost()
+            if (selectedPhotos.isEmpty()) {
+                createPost(emptyList())
+            } else {
+                uploadPhotos()
+            }
         }
     }
 
@@ -56,14 +151,67 @@ class CreatePostActivity : AppCompatActivity() {
         spinnerCategory.adapter = adapter
     }
 
-    private fun uploadPost() {
-        val currentUser = auth.currentUser
-        if (currentUser == null) {
-            Toast.makeText(this, "로그인이 필요합니다.", Toast.LENGTH_SHORT).show()
+    private fun launchImagePicker() {
+        val intent = Intent(Intent.ACTION_PICK)
+        intent.type = "image/*"
+        intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+        pickImagesLauncher.launch(intent)
+    }
+
+    private fun uploadPhotos() {
+        createButton.isEnabled = false
+        val uploadTasks = selectedPhotos.mapNotNull { uri ->
+            var inputStream: InputStream? = null
+            try {
+                inputStream = contentResolver.openInputStream(uri)
+                if (inputStream != null) {
+                    val photoRef = storage.reference.child("images/${UUID.randomUUID()}.jpg")
+                    photoRef.putStream(inputStream).continueWithTask { task ->
+                        if (!task.isSuccessful) {
+                            task.exception?.let { throw it }
+                        }
+                        photoRef.downloadUrl
+                    }
+                } else {
+                    null
+                }
+            } finally {
+                inputStream?.close()
+            }
+        }
+
+        if (uploadTasks.isEmpty() && selectedPhotos.isNotEmpty()) {
+            Log.w(TAG, "Failed to open input stream for some or all photos.")
+            Toast.makeText(this, "일부 사진을 처리하는데 실패했습니다. 다시 시도해주세요.", Toast.LENGTH_LONG).show()
+            createButton.isEnabled = true
             return
         }
 
-        // 닉네임 가져오기 추가
+        if (uploadTasks.isEmpty() && selectedPhotos.isEmpty()) {
+            createPost(emptyList())
+            return
+        }
+
+        Tasks.whenAllSuccess<Uri>(uploadTasks)
+            .addOnSuccessListener { downloadUrls ->
+                val photoUrls = downloadUrls.map { it.toString() }
+                createPost(photoUrls)
+            }
+            .addOnFailureListener { e ->
+                Log.w(TAG, "Error uploading photos", e)
+                Toast.makeText(this, "사진 업로드에 실패했습니다: ${e.message}", Toast.LENGTH_LONG).show()
+                createButton.isEnabled = true
+            }
+    }
+
+    private fun createPost(photoUrls: List<String>) {
+        val currentUser = auth.currentUser
+        if (currentUser == null) {
+            Toast.makeText(this, "로그인이 필요합니다.", Toast.LENGTH_SHORT).show()
+            createButton.isEnabled = true
+            return
+        }
+
         val creatorName = currentUser.displayName ?: "익명"
 
         val category = spinnerCategory.selectedItem.toString()
@@ -74,6 +222,7 @@ class CreatePostActivity : AppCompatActivity() {
 
         if (title.isEmpty() || content.isEmpty() || peopleStr.isEmpty() || place.isEmpty()) {
             Toast.makeText(this, "모든 항목을 입력해주세요.", Toast.LENGTH_SHORT).show()
+            createButton.isEnabled = true
             return
         }
 
@@ -81,37 +230,53 @@ class CreatePostActivity : AppCompatActivity() {
 
         if (totalPeople == null || totalPeople <= 1) {
             Toast.makeText(this, "인원(2명 이상)을 올바르게 입력해주세요.", Toast.LENGTH_SHORT).show()
+            createButton.isEnabled = true
             return
+        }
+
+        // GeoHash 계산 로직 추가
+        var newGeohash: String? = null
+        if (selectedMeetingLocation != null) {
+            try {
+                val geoLocation = GeoLocation(selectedMeetingLocation!!.latitude, selectedMeetingLocation!!.longitude)
+                newGeohash = GeoFireUtils.getGeoHashForLocation(geoLocation)
+                Log.d(TAG, "Calculated Geohash: $newGeohash for location: $selectedMeetingLocation")
+            } catch (e: Exception) {
+                Log.e(TAG, "Error calculating Geohash", e)
+            }
+        } else {
+            Log.d(TAG, "selectedMeetingLocation is null, Geohash will be null.")
         }
 
         val newPost = Post(
             title = title,
             content = content,
             category = category,
-            creatorName = creatorName, // 이 줄을 추가합니다.
+            creatorName = creatorName,
+            photoUrls = photoUrls,
             totalPeople = totalPeople,
-            meetingPlace = place,
+            meetingPlaceName = place,
+            meetingLocation = selectedMeetingLocation,
+            geohash = newGeohash, // 계산된 geohash 저장
             creatorUid = currentUser.uid,
             participants = listOf(currentUser.uid)
         )
 
-        createButton.isEnabled = false // 버튼 중복 클릭 방지
-
         firestore.collection("posts")
             .add(newPost)
             .addOnSuccessListener { documentReference ->
-                Log.d(TAG, "Post uploaded successfully: ${documentReference.id}")
+                Log.d(TAG, "Post uploaded successfully: ${documentReference.id}. Geohash: $newGeohash")
                 Toast.makeText(this, "게시글이 등록되었습니다.", Toast.LENGTH_SHORT).show()
 
                 val intent = Intent(this, PostDetailActivity::class.java)
                 intent.putExtra("POST_ID", documentReference.id)
                 startActivity(intent)
-                finish() // 상세 화면으로 넘어간 후, 현재 화면은 종료
+                finish()
             }
             .addOnFailureListener { e ->
                 Log.w(TAG, "Error uploading post", e)
                 Toast.makeText(this, "게시글 등록에 실패했습니다: ${e.message}", Toast.LENGTH_LONG).show()
-                createButton.isEnabled = true // 실패 시 버튼 다시 활성화
+                createButton.isEnabled = true
             }
     }
 }

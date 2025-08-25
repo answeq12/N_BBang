@@ -1,5 +1,3 @@
-// VerifyPhoneActivity.kt 파일 전체를 이 코드로 교체하세요.
-
 package com.bergi.nbang_v1
 
 import android.app.Activity

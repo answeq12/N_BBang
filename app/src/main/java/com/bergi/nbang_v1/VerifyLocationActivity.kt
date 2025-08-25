@@ -9,181 +9,154 @@ import android.os.Bundle
 import android.os.Looper
 import android.util.Log
 import android.view.View
-import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.ProgressBar
-import android.widget.Spinner
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.google.android.gms.location.*
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.GeoPoint // GeoPoint import 추가
 import com.google.firebase.ktx.Firebase
 import java.util.Locale
 
-class VerifyLocationActivity : AppCompatActivity() {
+class VerifyLocationActivity : BaseActivity() {
 
-    // UI 요소
-    private lateinit var spinnerSido: Spinner
-    private lateinit var spinnerSigungu: Spinner
-    private lateinit var statusTextView: TextView
+    private lateinit var locationTextView: TextView
+    private lateinit var confirmButton: Button
     private lateinit var progressBar: ProgressBar
-    private lateinit var verifyButton: Button
 
-    // 위치 서비스 및 DB
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var db: FirebaseFirestore
-    private val TAG = "VerifyLocation_DEBUG" // 로그 태그 변경
-
-    private val daeguSigunguList: List<String> = listOf(
-        "중구", "동구", "서구", "남구", "북구", "수성구", "달서구", "달성군", "군위군"
-    )
+    private var currentLocationString: String? = null
+    private var currentLocation: Location? = null // 현재 위치 좌표를 저장할 변수 추가
+    private val TAG = "VerifyLocationActivity"
 
     private val locationPermissionRequest = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
-        if (isGranted) verifySelectedLocation() else handleFailure("위치 권한이 거부되었습니다.")
+        if (isGranted) {
+            getCurrentLocation()
+        } else {
+            Toast.makeText(this, "위치 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
+            finish()
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_verify_location)
-        initViews()
-        initServices()
-        setupSpinners()
-        setupListeners()
-    }
 
-    private fun initViews() {
-        spinnerSido = findViewById(R.id.spinnerSido)
-        spinnerSigungu = findViewById(R.id.spinnerSigungu)
-        statusTextView = findViewById(R.id.textViewStatus)
+        locationTextView = findViewById(R.id.textViewCurrentLocation)
+        confirmButton = findViewById(R.id.buttonConfirmLocation)
         progressBar = findViewById(R.id.progressBar)
-        verifyButton = findViewById(R.id.buttonVerifySelectedLocation)
-    }
 
-    private fun initServices() {
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         db = FirebaseFirestore.getInstance()
-    }
 
-    private fun setupSpinners() {
-        val sidoAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, listOf("대구광역시"))
-        spinnerSido.adapter = sidoAdapter
-        spinnerSido.isEnabled = false
+        checkPermissionAndGetLocation()
 
-        val sigunguList = listOf("구/군 선택") + daeguSigunguList
-        val sigunguAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, sigunguList)
-        spinnerSigungu.adapter = sigunguAdapter
-        sigunguAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-    }
-
-    private fun setupListeners() {
-        verifyButton.setOnClickListener {
-            verifySelectedLocation()
+        confirmButton.setOnClickListener {
+            saveLocationToFirestore()
         }
     }
 
-    private fun verifySelectedLocation() {
-        val selectedSigungu = spinnerSigungu.selectedItem.toString()
-
-        if (selectedSigungu == "구/군 선택") {
-            Toast.makeText(this, "인증할 지역(구/군)을 선택해주세요.", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        progressBar.visibility = View.VISIBLE
-        verifyButton.isEnabled = false
-        statusTextView.text = "현재 위치를 확인하여 '$selectedSigungu'과(와) 비교하는 중..."
-
+    private fun checkPermissionAndGetLocation() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            getCurrentLocationAndCompare(selectedSigungu)
+            getCurrentLocation()
         } else {
             locationPermissionRequest.launch(Manifest.permission.ACCESS_FINE_LOCATION)
         }
     }
 
-    private fun getCurrentLocationAndCompare(selectedSigungu: String) {
+    private fun getCurrentLocation() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) return
 
-        fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-            if (location != null) {
-                compareLocation(location, selectedSigungu)
-            } else {
-                val locationRequest = LocationRequest.create().apply {
-                    priority = Priority.PRIORITY_HIGH_ACCURACY
-                    interval = 5000
-                    fastestInterval = 1000
-                    numUpdates = 1
-                }
+        progressBar.visibility = View.VISIBLE
+        locationTextView.text = "현재 위치를 찾는 중..."
 
-                val locationCallback = object : LocationCallback() {
-                    override fun onLocationResult(locationResult: LocationResult) {
-                        val lastLocation = locationResult.lastLocation
-                        if (lastLocation != null) {
-                            compareLocation(lastLocation, selectedSigungu)
-                        } else {
-                            handleFailure("현재 위치를 가져오는 데 실패했습니다.")
-                        }
-                        fusedLocationClient.removeLocationUpdates(this)
-                    }
-                }
-                fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper())
-            }
-        }.addOnFailureListener {
-            handleFailure("위치 정보 요청에 실패했습니다.")
+        val locationRequest = LocationRequest.create().apply {
+            priority = Priority.PRIORITY_HIGH_ACCURACY
+            numUpdates = 1
         }
+
+        val locationCallback = object : LocationCallback() {
+            override fun onLocationResult(locationResult: LocationResult) {
+                locationResult.lastLocation?.let {
+                    updateUIToShowLocation(it)
+                } ?: handleFailure("위치를 찾을 수 없습니다.")
+                fusedLocationClient.removeLocationUpdates(this)
+            }
+        }
+        fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper())
     }
 
-    // --- 이 부분을 수정했습니다 ---
-    private fun compareLocation(location: Location, selectedSigungu: String) {
+    private fun updateUIToShowLocation(location: Location) {
+        this.currentLocation = location // --- 현재 위치 좌표를 변수에 저장 ---
         val geocoder = Geocoder(this, Locale.KOREA)
-        Log.d(TAG, "주소 변환 시도. Lat: ${location.latitude}, Lon: ${location.longitude}")
-
         try {
             val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
-
             if (addresses.isNullOrEmpty()) {
-                Log.w(TAG, "주소 변환 실패: Geocoder가 주소를 반환하지 않았습니다.")
-                handleFailure("주소 정보를 찾을 수 없습니다. 네트워크 연결을 확인해주세요.")
-                return
+                handleFailure("주소 정보를 찾을 수 없습니다."); return
             }
-
             val address = addresses[0]
-            val currentSigungu = address.locality // 'locality'가 시/군/구에 해당합니다.
-            Log.d(TAG, "주소 변환 성공: 전체 주소 - ${address.getAddressLine(0)}, locality - $currentSigungu")
+            val sido = address.adminArea
+            val sigungu = address.locality ?: address.subLocality
+            val dong = address.thoroughfare ?: address.subLocality
 
-            if (currentSigungu == selectedSigungu) {
-                val fullLocation = "대구광역시 $selectedSigungu"
-                updateLocationInFirestore(fullLocation)
+            if (sido != null && sigungu != null && dong != null) {
+                currentLocationString = "$sido $sigungu $dong"
+                val displayText = "$sigungu $dong"
+
+                locationTextView.text = "현재 위치는\n'$displayText' 입니다."
+                confirmButton.isEnabled = true
             } else {
-                handleFailure("인증 실패: 선택하신 '$selectedSigungu'이(가) 아닙니다.\n(현재 위치: ${currentSigungu ?: "알 수 없음"})")
+                handleFailure("정확한 동네 정보를 찾을 수 없습니다.")
             }
+
         } catch (e: Exception) {
-            Log.e(TAG, "주소 변환 중 예외 발생", e)
             handleFailure("주소 변환 중 오류가 발생했습니다.")
+        } finally {
+            progressBar.visibility = View.GONE
         }
     }
 
-    private fun updateLocationInFirestore(location: String) {
-        val user = Firebase.auth.currentUser ?: return
+    private fun saveLocationToFirestore() {
+        val user = Firebase.auth.currentUser
+        if (user == null || currentLocationString == null || currentLocation == null) {
+            Toast.makeText(this, "오류가 발생했습니다.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        confirmButton.isEnabled = false
+        progressBar.visibility = View.VISIBLE
+
+        // --- Firestore에 저장할 데이터에 좌표(GeoPoint)를 추가합니다 ---
+        val locationData = mapOf(
+            "location" to currentLocationString,
+            "locationPoint" to GeoPoint(currentLocation!!.latitude, currentLocation!!.longitude)
+        )
+
         db.collection("users").document(user.uid)
-            .update("location", location)
+            .update(locationData) // 주소 이름과 좌표를 함께 업데이트
             .addOnSuccessListener {
-                Toast.makeText(this, "'$location' 인증 완료!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "'$currentLocationString' 인증 완료!", Toast.LENGTH_SHORT).show()
                 setResult(Activity.RESULT_OK)
                 finish()
             }
-            .addOnFailureListener { e -> handleFailure("DB 저장 실패: ${e.message}") }
+            .addOnFailureListener { e ->
+                Toast.makeText(this, "DB 저장 실패: ${e.message}", Toast.LENGTH_SHORT).show()
+                confirmButton.isEnabled = true
+                progressBar.visibility = View.GONE
+            }
     }
 
     private fun handleFailure(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show()
-        statusTextView.text = message
+        locationTextView.text = message
         progressBar.visibility = View.GONE
-        verifyButton.isEnabled = true
+        confirmButton.isEnabled = false
     }
 }

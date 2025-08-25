@@ -16,11 +16,13 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.SignInButton
 import com.google.android.gms.common.api.ApiException
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseUser // FirebaseUser import 추가
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.messaging.ktx.messaging
+import com.google.firebase.firestore.SetOptions
 
 class LoginActivity : AppCompatActivity() {
 
@@ -36,7 +38,7 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var signUpLauncher: ActivityResultLauncher<Intent>
 
     private val TAG = "LoginActivity"
-    private val WEB_CLIENT_ID = "979223132862-8aiv5g67eklhs2luetcuj9lniiti4kfc.apps.googleusercontent.com" // 실제 Web Client ID로 변경 필요
+    private val WEB_CLIENT_ID = "979223132862-8aiv5g67eklhs2luetcuj9lniiti4kfc.apps.googleusercontent.com"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -119,10 +121,9 @@ class LoginActivity : AppCompatActivity() {
             .addOnCompleteListener(this) { task ->
                 if (task.isSuccessful) {
                     val user = auth.currentUser
-                    val authResult = task.result //
+                    val authResult = task.result
                     val isNewUser = authResult?.additionalUserInfo?.isNewUser ?: false
 
-                    // ▼▼▼ 이 부분이 핵심입니다 ▼▼▼
                     // 새로운 사용자인 경우에만 Firestore에 정보를 생성합니다.
                     if (isNewUser && user != null) {
                         val db = FirebaseFirestore.getInstance()
@@ -137,19 +138,19 @@ class LoginActivity : AppCompatActivity() {
                         db.collection("users").document(user.uid).set(userMap)
                             .addOnSuccessListener {
                                 Log.d(TAG, "New Google user's info saved to Firestore.")
-                                navigateToWelcomeActivity(user) // DB 저장 후 화면 이동
+                                saveFCMTokenToFirestore(user) // 토큰 저장 로직 추가
+                                navigateToWelcomeActivity(user)
                             }
                             .addOnFailureListener { e ->
                                 Log.e(TAG, "Error saving new Google user to Firestore", e)
-                                navigateToWelcomeActivity(user) // 실패해도 일단 진행
+                                saveFCMTokenToFirestore(user) // 실패해도 토큰은 저장 시도
+                                navigateToWelcomeActivity(user)
                             }
                     } else {
-                        // 기존 사용자는 바로 화면 이동
                         Log.d(TAG, "Google signIn with Firebase: success. User: ${user?.displayName}")
+                        saveFCMTokenToFirestore(user) // 기존 사용자는 로그인 후 바로 토큰 저장
                         navigateToWelcomeActivity(user)
                     }
-                    // ▲▲▲ 여기까지 수정 ▲▲▲
-
                 } else {
                     Log.w(TAG, "Google signIn with Firebase: failure", task.exception)
                     Toast.makeText(this, "Google 로그인 연동 실패: ${task.exception?.message}", Toast.LENGTH_LONG).show()
@@ -164,14 +165,15 @@ class LoginActivity : AppCompatActivity() {
                     Log.d(TAG, "signInWithEmail:success")
                     val user = auth.currentUser
                     Toast.makeText(baseContext, "로그인 성공!", Toast.LENGTH_SHORT).show()
-                    navigateToWelcomeActivity(user) // WelcomeActivity로 이동
+                    saveFCMTokenToFirestore(user) // 이메일 로그인 성공 시 토큰 저장 로직 추가
+                    navigateToWelcomeActivity(user)
                 } else {
                     Log.w(TAG, "signInWithEmail:failure", task.exception)
                     var errorMessage = "로그인 실패: ${task.exception?.message}"
-                    if (task.exception?.message?.contains("INVALID_LOGIN_CREDENTIALS") == true || 
+                    if (task.exception?.message?.contains("INVALID_LOGIN_CREDENTIALS") == true ||
                         task.exception?.message?.contains("INVALID_PASSWORD") == true ||
-                        task.exception?.message?.contains("USER_NOT_FOUND") == true) { // Firebase 에러 코드에 따라 조정
-                         errorMessage = "이메일 또는 비밀번호가 올바르지 않습니다."
+                        task.exception?.message?.contains("USER_NOT_FOUND") == true) {
+                        errorMessage = "이메일 또는 비밀번호가 올바르지 않습니다."
                     } else if (task.exception?.message?.contains("USER_DISABLED") == true) {
                         errorMessage = "사용 중지된 계정입니다."
                     }
@@ -189,22 +191,43 @@ class LoginActivity : AppCompatActivity() {
         }
     }
 
-    // 사용자 정보를 받아 닉네임을 WelcomeActivity에 전달하며 이동하는 함수
+    // 새로운 FCM 토큰 저장 함수 추가
+    private fun saveFCMTokenToFirestore(user: FirebaseUser?) {
+        if (user == null) {
+            Log.w(TAG, "User is null, cannot save FCM token.")
+            return
+        }
+
+        Firebase.messaging.token.addOnCompleteListener { task ->
+            if (task.isSuccessful && task.result != null) {
+                val token = task.result
+                val userDocRef = FirebaseFirestore.getInstance().collection("users").document(user.uid)
+                userDocRef.set(mapOf("fcmToken" to token), SetOptions.merge())
+                    .addOnSuccessListener {
+                        Log.d(TAG, "FCM 토큰이 로그인 후 성공적으로 업데이트되었습니다.")
+                    }
+                    .addOnFailureListener { e ->
+                        Log.w(TAG, "FCM 토큰 업데이트 중 오류 발생.", e)
+                    }
+            } else {
+                Log.w(TAG, "FCM 토큰을 가져오는 데 실패했습니다.", task.exception)
+            }
+        }
+    }
+
     private fun navigateToWelcomeActivity(user: FirebaseUser?) {
         val nickname = getNicknameForWelcome(user)
         val intent = Intent(this, WelcomeActivity::class.java).apply {
             putExtra("NICKNAME", nickname)
-            // WelcomeActivity 이후에는 로그인 화면으로 돌아오지 않도록 스택 정리
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
         startActivity(intent)
-        finish() // LoginActivity 종료
+        finish()
     }
 
-    // WelcomeActivity에 전달할 닉네임 문자열을 생성하는 도우미 함수
     private fun getNicknameForWelcome(user: FirebaseUser?): String {
-        return user?.displayName?.takeIf { it.isNotBlank() } // displayName이 비어있지 않으면 사용
-            ?: user?.email?.split('@')?.firstOrNull() // 이메일의 @ 앞부분 사용
-            ?: "사용자" // 둘 다 없으면 "사용자"
+        return user?.displayName?.takeIf { it.isNotBlank() }
+            ?: user?.email?.split('@')?.firstOrNull()
+            ?: "사용자"
     }
 }
