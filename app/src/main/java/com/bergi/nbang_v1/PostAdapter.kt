@@ -32,7 +32,7 @@ class PostAdapter(
             status.text = post.status
             title.text = post.title
             people.text = "${post.currentPeople} / ${post.totalPeople}명"
-            meetingPlace.text = post.meetingPlace
+            meetingPlace.text = post.meetingPlaceName
             timestamp.text = formatTimestamp(post.timestamp)
 
             // 사진이 있을 경우에만 썸네일 표시

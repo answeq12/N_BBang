@@ -1,21 +1,28 @@
 package com.bergi.nbang_v1
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.location.Location
 import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.viewpager2.widget.ViewPager2
-import com.google.android.material.card.MaterialCardView
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationServices
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.ktx.Firebase
 import java.util.Date
 
-class PostDetailActivity : BaseActivity() { // BaseActivity 상속으로 애니메이션 복구
+class PostDetailActivity : AppCompatActivity() {
 
     private lateinit var firestore: FirebaseFirestore
     private var postId: String? = null
@@ -28,14 +35,32 @@ class PostDetailActivity : BaseActivity() { // BaseActivity 상속으로 애니�
     private lateinit var contentTextView: TextView
     private lateinit var peopleTextView: TextView
     private lateinit var placeTextView: TextView
+    private lateinit var distanceTextView: TextView
     private lateinit var joinButton: Button
     private lateinit var deleteButton: Button
-    private lateinit var creatorNicknameTextView: TextView // 변수 이름 통일
-    private lateinit var creatorProfileCard: MaterialCardView // 프로필 카드 변수 추가
+    private lateinit var creatorNameTextView: TextView
     private lateinit var photoViewPager: ViewPager2
     private lateinit var photoCountTextView: TextView
 
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
+
     private val TAG = "PostDetailActivity"
+
+    private val locationPermissionRequest = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        when {
+            permissions.getOrDefault(Manifest.permission.ACCESS_FINE_LOCATION, false) -> {
+                getCurrentLocation()
+            }
+            permissions.getOrDefault(Manifest.permission.ACCESS_COARSE_LOCATION, false) -> {
+                getCurrentLocation()
+            }
+            else -> {
+                distanceTextView.visibility = View.GONE
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -43,6 +68,7 @@ class PostDetailActivity : BaseActivity() { // BaseActivity 상속으로 애니�
 
         firestore = FirebaseFirestore.getInstance()
         postId = intent.getStringExtra("POST_ID")
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
         // UI 요소 초기화
         categoryTextView = findViewById(R.id.textViewDetailCategory)
@@ -51,10 +77,10 @@ class PostDetailActivity : BaseActivity() { // BaseActivity 상속으로 애니�
         contentTextView = findViewById(R.id.textViewDetailContent)
         peopleTextView = findViewById(R.id.textViewDetailPeople)
         placeTextView = findViewById(R.id.textViewDetailPlace)
+        distanceTextView = findViewById(R.id.textViewDistance)
         joinButton = findViewById(R.id.buttonJoin)
         deleteButton = findViewById(R.id.buttonDelete)
-        creatorNicknameTextView = findViewById(R.id.textViewCreatorNickname)
-        creatorProfileCard = findViewById(R.id.cardViewCreatorProfile) // 프로필 카드 초기화 추가
+        creatorNameTextView = findViewById(R.id.textViewCreatorNickname)
         photoViewPager = findViewById(R.id.photoViewPager)
         photoCountTextView = findViewById(R.id.photoCountTextView)
 
@@ -83,6 +109,7 @@ class PostDetailActivity : BaseActivity() { // BaseActivity 상속으로 애니�
                     currentPost = document.toObject(Post::class.java)
                     if (currentPost != null) {
                         updateUI(currentPost!!)
+                        checkLocationPermission()
                     } else {
                         handleLoadError()
                     }
@@ -101,20 +128,15 @@ class PostDetailActivity : BaseActivity() { // BaseActivity 상속으로 애니�
         categoryTextView.text = post.category
         contentTextView.text = post.content
         peopleTextView.text = "${post.currentPeople} / ${post.totalPeople}명"
-        placeTextView.text = post.meetingPlace
+        placeTextView.text = post.meetingPlaceName
         timestampTextView.text = formatTimestamp(post.timestamp)
+        creatorNameTextView.text = post.creatorName
 
-        // 1. Firestore에서 작성자 닉네임을 불러오는 함수 호출
-        loadCreatorInfo(post.creatorUid)
-
-        // 2. 프로필 카드에 클릭 리스너 설정
-        creatorProfileCard.setOnClickListener {
+        creatorNameTextView.setOnClickListener {
             val intent = Intent(this, UserProfileActivity::class.java)
             intent.putExtra("USER_ID", post.creatorUid)
             startActivity(intent)
-            overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
         }
-
 
         if (post.photoUrls.isNotEmpty()) {
             photoViewPager.adapter = PhotoAdapter(post.photoUrls)
@@ -141,20 +163,57 @@ class PostDetailActivity : BaseActivity() { // BaseActivity 상속으로 애니�
         }
     }
 
-    // --- 이 함수를 다시 추가했습니다 ---
-    private fun loadCreatorInfo(creatorId: String) {
-        firestore.collection("users").document(creatorId).get()
-            .addOnSuccessListener { document ->
-                if (document != null && document.exists()) {
-                    val nickname = document.getString("nickname") ?: "알 수 없음"
-                    creatorNicknameTextView.text = nickname
+    private fun checkLocationPermission() {
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            getCurrentLocation()
+        } else {
+            locationPermissionRequest.launch(
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+            )
+        }
+    }
+
+    private fun getCurrentLocation() {
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_COARSE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            return
+        }
+        fusedLocationClient.lastLocation
+            .addOnSuccessListener { location: Location? ->
+                // --- 이 부분을 수정하여 오류를 해결합니다 ---
+                val postLocation = currentPost?.meetingLocation
+                if (location != null && postLocation != null) {
+                    val distance = calculateDistance(
+                        location.latitude,
+                        location.longitude,
+                        postLocation.latitude,  // post.meetingLocation.latitude로 변경
+                        postLocation.longitude // post.meetingLocation.longitude로 변경
+                    )
+                    distanceTextView.text = "약 ${String.format("%.1f", distance / 1000)}km 떨어져 있어요"
+                    distanceTextView.visibility = View.VISIBLE
                 } else {
-                    creatorNicknameTextView.text = "알 수 없음"
+                    distanceTextView.visibility = View.GONE
                 }
             }
-            .addOnFailureListener {
-                creatorNicknameTextView.text = "정보 로딩 실패"
-            }
+    }
+
+    private fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Float {
+        val results = FloatArray(1)
+        Location.distanceBetween(lat1, lon1, lat2, lon2, results)
+        return results[0]
     }
 
     private fun showDeleteConfirmationDialog() {
@@ -201,6 +260,7 @@ class PostDetailActivity : BaseActivity() { // BaseActivity 상속으로 애니�
             hours > 0 -> "${hours}시간 전"
             minutes > 0 -> "${minutes}분 전"
             else -> "방금 전"
+
         }
     }
 }

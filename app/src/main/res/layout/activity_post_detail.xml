@@ -175,6 +175,17 @@
             app:layout_constraintTop_toTopOf="@+id/labelPlace"
             tools:text="강남역 10번 출구" />
 
+        <TextView
+            android:id="@+id/textViewDistance"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:gravity="end"
+            android:textAppearance="?attr/textAppearanceBody2"
+            android:textColor="?attr/colorPrimary"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/textViewDetailPlace"
+            tools:text="약 500m 떨어져 있어요" />
+
         <Button
             android:id="@+id/buttonDelete"
             style="?attr/materialButtonOutlinedStyle"
