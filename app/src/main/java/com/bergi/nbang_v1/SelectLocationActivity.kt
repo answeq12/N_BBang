@@ -5,12 +5,14 @@ import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.util.Log // Log 임포트 확인
 import android.widget.Button
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
+import com.naver.maps.geometry.LatLng // Naver 지도 LatLng 임포트 확인
 import com.naver.maps.map.CameraUpdate
 import com.naver.maps.map.MapView
 import com.naver.maps.map.NaverMap
@@ -24,16 +26,16 @@ class SelectLocationActivity : AppCompatActivity(), OnMapReadyCallback {
     private var marker: Marker? = null
     private lateinit var fusedLocationClient: FusedLocationProviderClient
 
+    private val TAG_SELECT_LOCATION = "SelectLocationActivity" // 로그용 태그
+
     private val locationPermissionRequest = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
         when {
             permissions.getOrDefault(Manifest.permission.ACCESS_FINE_LOCATION, false) -> {
-                // Fine location access granted.
                 getCurrentLocation()
             }
             permissions.getOrDefault(Manifest.permission.ACCESS_COARSE_LOCATION, false) -> {
-                // Only approximate location access granted.
                 getCurrentLocation()
             }
         }
@@ -53,8 +55,18 @@ class SelectLocationActivity : AppCompatActivity(), OnMapReadyCallback {
         selectLocationButton.setOnClickListener {
             val selectedLatLng = naverMap.cameraPosition.target
             val resultIntent = Intent()
+
+            // 더미 데이터 생성
+            val dummyPlaceName = "선택된 위치 (더미)"
+            val dummyAddressName = "상세 주소 (더미)"
+
             resultIntent.putExtra("latitude", selectedLatLng.latitude)
             resultIntent.putExtra("longitude", selectedLatLng.longitude)
+            resultIntent.putExtra("placeName", dummyPlaceName) // 더미 장소 이름 전달
+            resultIntent.putExtra("addressName", dummyAddressName) // 더미 주소 이름 전달
+
+            Log.d(TAG_SELECT_LOCATION, "Returning location: Lat=${selectedLatLng.latitude}, Lng=${selectedLatLng.longitude}, Place=$dummyPlaceName, Address=$dummyAddressName")
+
             setResult(Activity.RESULT_OK, resultIntent)
             finish()
         }
@@ -63,14 +75,12 @@ class SelectLocationActivity : AppCompatActivity(), OnMapReadyCallback {
     override fun onMapReady(naverMap: NaverMap) {
         this.naverMap = naverMap
 
-        // Add a marker to the center of the map
         marker = Marker()
         marker?.position = naverMap.cameraPosition.target
         marker?.map = naverMap
 
         checkLocationPermission()
 
-        // Update marker position as the camera moves
         naverMap.addOnCameraChangeListener { _, _ ->
             marker?.position = naverMap.cameraPosition.target
         }
@@ -102,21 +112,19 @@ class SelectLocationActivity : AppCompatActivity(), OnMapReadyCallback {
                 Manifest.permission.ACCESS_COARSE_LOCATION
             ) != PackageManager.PERMISSION_GRANTED
         ) {
-            // Default to Seoul if permission is not granted
-            val cameraUpdate = CameraUpdate.scrollTo(com.naver.maps.geometry.LatLng(37.5665, 126.9780))
+            val cameraUpdate = CameraUpdate.scrollTo(LatLng(37.5665, 126.9780)) // Seoul
             naverMap.moveCamera(cameraUpdate)
             return
         }
         fusedLocationClient.lastLocation
             .addOnSuccessListener { location ->
-                if (location != null) {
-                    val cameraUpdate = CameraUpdate.scrollTo(com.naver.maps.geometry.LatLng(location.latitude, location.longitude))
-                    naverMap.moveCamera(cameraUpdate)
+                val targetLocation = if (location != null) {
+                    LatLng(location.latitude, location.longitude)
                 } else {
-                    // Default to Seoul if location is null
-                    val cameraUpdate = CameraUpdate.scrollTo(com.naver.maps.geometry.LatLng(37.5665, 126.9780))
-                    naverMap.moveCamera(cameraUpdate)
+                    LatLng(37.5665, 126.9780) // Default to Seoul
                 }
+                val cameraUpdate = CameraUpdate.scrollTo(targetLocation)
+                naverMap.moveCamera(cameraUpdate)
             }
     }
 

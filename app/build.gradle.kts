@@ -60,6 +60,9 @@ dependencies {
     // Firebase Storage 라이브러리
     implementation("com.google.firebase:firebase-storage-ktx")
 
+    implementation(platform("com.google.firebase:firebase-bom:33.1.2")) // 이미 있다면 버전 확인
+    implementation("com.google.firebase:firebase-messaging-ktx")
+
     // Glide 라이브러리
     implementation("com.github.bumptech.glide:glide:4.12.0")
     kapt("com.github.bumptech.glide:compiler:4.12.0")

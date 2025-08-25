@@ -2,6 +2,7 @@ package com.bergi.nbang_v1
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log // Log import 추가
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -28,6 +29,7 @@ class MyFragment : Fragment() {
         val profileCard = view.findViewById<View>(R.id.cardViewProfile)
         val myActivitiesCard = view.findViewById<View>(R.id.cardMyActivities)
         val certifyLocationButton = view.findViewById<Button>(R.id.buttonCertifyLocation)
+        val keywordAlarmCard = view.findViewById<View>(R.id.cardKeywordAlarm) // *** keywordAlarmCard 추가 ***
 
         // 닉네임은 Firebase Auth의 기본 정보만 간단히 표시합니다.
         val user = Firebase.auth.currentUser
@@ -41,6 +43,13 @@ class MyFragment : Fragment() {
         // '내 활동' 카드를 클릭했을 때의 동작
         myActivitiesCard.setOnClickListener {
             val intent = Intent(requireContext(), MyActivitiesActivity::class.java)
+            startActivity(intent)
+            activity?.overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
+        }
+
+        // *** '키워드 알림' 카드를 클릭했을 때의 동작 추가 ***
+        keywordAlarmCard.setOnClickListener {
+            val intent = Intent(requireContext(), KeywordSettingsActivity::class.java)
             startActivity(intent)
             activity?.overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
         }

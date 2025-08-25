@@ -112,10 +112,22 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="장소 선택"
+            android:text="장소 선택 (지도)"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/textViewLabelPlace" />
+
+        <EditText
+            android:id="@+id/editTextMeetingPlace"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:hint="만날 장소 직접 입력 또는 지도에서 선택"
+            android:inputType="text"
+            android:minHeight="48dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/buttonSelectPlace" />
 
         <TextView
             android:id="@+id/textViewSelectedPlace"
@@ -126,7 +138,7 @@
             android:textAppearance="?attr/textAppearanceBodyMedium"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/buttonSelectPlace" />
+            app:layout_constraintTop_toBottomOf="@+id/editTextMeetingPlace" />
 
         <Button
             android:id="@+id/selectPhotoButton"
