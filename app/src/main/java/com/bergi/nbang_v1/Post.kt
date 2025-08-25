@@ -22,7 +22,6 @@ data class Post(
     var creatorUid: String = "",
     var participants: List<String> = emptyList(),
 
-    // --- 이 부분을 추가/수정하여 오류를 해결합니다 ---
     var meetingPlaceName: String = "",
     var meetingLocation: GeoPoint? = null,
     var geohash: String? = null,

@@ -15,11 +15,13 @@ import com.firebase.geofire.GeoFireUtils
 import com.firebase.geofire.GeoLocation
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks
+import com.google.android.material.chip.ChipGroup
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.slider.Slider
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.GeoPoint
+import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.ktx.Firebase
 
@@ -33,11 +35,15 @@ class HomeFragment : Fragment() {
     private lateinit var sliderGroup: ConstraintLayout
     private lateinit var distanceSlider: Slider
     private lateinit var distanceValueTextView: TextView
-    private lateinit var fabCreatePost: FloatingActionButton // 변수 선언 위치 수정
+    private lateinit var fabCreatePost: FloatingActionButton
+    private lateinit var chipGroupStatus: ChipGroup
+    private lateinit var chipGroupCategory: ChipGroup
 
-    // 위치 및 반경 데이터
+    // 위치 및 필터 데이터
     private var currentUserLocation: GeoPoint? = null
-    private var currentRadiusInKm: Double = 5.0 // 기본 반경 5km
+    private var currentRadiusInKm: Double = 5.0
+    private var currentFilterStatus: String = "all"
+    private var currentFilterCategory: String = "all"
 
     private val TAG = "HomeFragment_DEBUG"
 
@@ -55,11 +61,13 @@ class HomeFragment : Fragment() {
 
         // UI 요소 초기화
         val recyclerViewPosts = view.findViewById<RecyclerView>(R.id.recyclerViewPosts)
-        fabCreatePost = view.findViewById(R.id.fabCreatePost) // 초기화 방식 수정
-        userLocationTextView = view.findViewById(R.id.textViewUserLocation)
-        sliderGroup = view.findViewById(R.id.sliderGroup)
-        distanceSlider = view.findViewById(R.id.distanceSlider)
-        distanceValueTextView = view.findViewById(R.id.textViewDistanceValue)
+        fabCreatePost = view.findViewById<FloatingActionButton>(R.id.fabCreatePost)
+        userLocationTextView = view.findViewById<TextView>(R.id.textViewUserLocation)
+        sliderGroup = view.findViewById<ConstraintLayout>(R.id.sliderGroup)
+        distanceSlider = view.findViewById<Slider>(R.id.distanceSlider)
+        distanceValueTextView = view.findViewById<TextView>(R.id.textViewDistanceValue)
+        chipGroupStatus = view.findViewById<ChipGroup>(R.id.chipGroupStatus)
+        chipGroupCategory = view.findViewById<ChipGroup>(R.id.chipGroupCategory)
 
         setupRecyclerView(recyclerViewPosts)
         setupClickListeners()
@@ -96,11 +104,36 @@ class HomeFragment : Fragment() {
         distanceSlider.addOnSliderTouchListener(object : Slider.OnSliderTouchListener {
             override fun onStartTrackingTouch(slider: Slider) {}
             override fun onStopTrackingTouch(slider: Slider) {
-                currentUserLocation?.let {
-                    fetchNearbyPosts(it, currentRadiusInKm * 1000.0)
-                }
+                loadUserLocationAndThenPosts()
             }
         })
+
+        // [수정] 필터 칩 클릭 리스너
+        val refreshPostsListener: (ChipGroup, List<Int>) -> Unit = { chipGroup, checkedIds ->
+            // 현재 선택된 칩 ID를 기반으로 필터 상태 변수 업데이트
+            currentFilterStatus = when (chipGroupStatus.checkedChipId) {
+                R.id.chipStatusRecruiting -> "모집중"
+                R.id.chipStatusCompleted -> "모집완료" // 새로 추가
+                else -> "all" // 기본값은 chipStatusAll 또는 정의되지 않은 ID
+            }
+            currentFilterCategory = when (chipGroupCategory.checkedChipId) {
+                R.id.chipCategoryFood -> "음식 배달"
+                R.id.chipCategoryPurchase -> "생필품 공동구매"
+                R.id.chipCategoryErrandWant -> "대리구매 원해요" // 새로 추가
+                R.id.chipCategoryErrandDo -> "대리구매 해드려요" // 새로 추가
+                R.id.chipCategoryTaxi -> "택시 합승"       // 새로 추가
+                R.id.chipCategoryEtc -> "기타"           // 새로 추가
+                else -> "all" // 기본값은 chipCategoryAll 또는 정의되지 않은 ID
+            }
+            // 로그 추가: 현재 선택된 필터 상태와 카테고리 확인
+            Log.d(TAG, "Filter changed - Status: $currentFilterStatus, Category: $currentFilterCategory")
+
+            // 필터 상태가 변경되었으므로 게시글 목록을 새로고침
+            loadUserLocationAndThenPosts()
+        }
+
+        chipGroupStatus.setOnCheckedStateChangeListener(refreshPostsListener)
+        chipGroupCategory.setOnCheckedStateChangeListener(refreshPostsListener)
 
         fabCreatePost.setOnClickListener {
             startActivity(Intent(requireContext(), CreatePostActivity::class.java))
@@ -116,21 +149,24 @@ class HomeFragment : Fragment() {
                     val locationName = document.getString("location")
                     currentUserLocation = document.getGeoPoint("locationPoint")
 
-                    // 주소에서 '동' 이름만 추출 (예: "대구광역시 북구 태전동" -> "태전동")
                     val dongName = locationName?.split(" ")?.lastOrNull()
 
                     if (!dongName.isNullOrEmpty() && currentUserLocation != null) {
                         userLocationTextView.text = dongName
-                        // 인증된 위치가 있으면, 현재 슬라이더 값 기준으로 주변 게시글 검색
                         fetchNearbyPosts(currentUserLocation!!, currentRadiusInKm * 1000.0)
                     } else {
                         userLocationTextView.text = "MY 탭에서 동네를 인증해주세요."
-                        postAdapter.updatePosts(emptyList())
+                        postAdapter.updatePosts(emptyList()) // 인증 안됐을 시 목록 비우기
                     }
                 } else {
                     userLocationTextView.text = "MY 탭에서 동네를 인증해주세요."
-                    postAdapter.updatePosts(emptyList())
+                    postAdapter.updatePosts(emptyList()) // 사용자 정보 없을 시 목록 비우기
                 }
+            }
+            .addOnFailureListener {
+                Log.e(TAG, "사용자 위치 정보 로드 실패", it)
+                userLocationTextView.text = "위치 정보 로드 오류"
+                postAdapter.updatePosts(emptyList()) // 오류 시 목록 비우기
             }
     }
 
@@ -140,39 +176,58 @@ class HomeFragment : Fragment() {
         val tasks = mutableListOf<Task<QuerySnapshot>>()
 
         for (b in bounds) {
-            val q = firestore.collection("posts")
+            var baseQuery: Query = firestore.collection("posts")
+
+            // 1. 모집 상태 필터 적용
+            if (currentFilterStatus != "all") {
+                baseQuery = baseQuery.whereEqualTo("status", currentFilterStatus)
+            }
+            // 2. 카테고리 필터 적용
+            if (currentFilterCategory != "all") {
+                Log.d(TAG, "Firestore Query: Applying category filter - '$currentFilterCategory'")
+                baseQuery = baseQuery.whereEqualTo("category", currentFilterCategory)
+            }
+
+            // 3. 위치 기반 쿼리 적용
+            val q = baseQuery
                 .orderBy("geohash")
                 .startAt(b.startHash)
                 .endAt(b.endHash)
+
             tasks.add(q.get())
         }
 
         Tasks.whenAllComplete(tasks)
-            .addOnSuccessListener {
+            .addOnSuccessListener { taskResults ->
                 val matchingPosts = mutableListOf<Post>()
-                for (task in tasks) {
-                    val snap = task.result
-                    for (doc in snap.documents) {
-                        val geoPoint = doc.getGeoPoint("meetingLocation")
-                        if (geoPoint != null) {
-                            val docLocation = GeoLocation(geoPoint.latitude, geoPoint.longitude)
-                            val distanceInM = GeoFireUtils.getDistanceBetween(docLocation, center)
-                            if (distanceInM <= radiusInM) {
-                                val post = doc.toObject(Post::class.java)
-                                if (post != null) {
-                                    post.id = doc.id
-                                    matchingPosts.add(post)
+                for (task in taskResults) {
+                    if (task.isSuccessful) {
+                        val snap = task.result as QuerySnapshot
+                        for (doc in snap.documents) {
+                            val geoPoint = doc.getGeoPoint("meetingLocation")
+                            if (geoPoint != null) {
+                                val docLocation = GeoLocation(geoPoint.latitude, geoPoint.longitude)
+                                val distanceInM = GeoFireUtils.getDistanceBetween(docLocation, center)
+                                if (distanceInM <= radiusInM) {
+                                    val post = doc.toObject(Post::class.java)
+                                    if (post != null) {
+                                        post.id = doc.id
+                                        matchingPosts.add(post)
+                                    }
                                 }
                             }
                         }
+                    } else {
+                        Log.w(TAG, "하나 이상의 쿼리 실패", task.exception)
                     }
                 }
                 matchingPosts.sortByDescending { it.timestamp }
                 postAdapter.updatePosts(matchingPosts)
-                Log.d(TAG, "반경 ${radiusInM/1000}km 내 게시글 ${matchingPosts.size}개를 찾았습니다.")
+                Log.d(TAG, "필터(상태:$currentFilterStatus, 카테고리:$currentFilterCategory), 반경 ${radiusInM/1000}km 내 게시글 ${matchingPosts.size}개를 찾았습니다.")
             }
             .addOnFailureListener {
-                Log.e(TAG, "주변 게시글 검색 실패", it)
+                Log.e(TAG, "주변 게시글 검색 실패 (전체 작업)", it)
+                postAdapter.updatePosts(emptyList()) // 전체 작업 실패 시 목록 비우기
             }
     }
 }
