@@ -5,7 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
 import android.os.Bundle
-import android.util.Log // Log 임포트 확인
+import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.TextView
@@ -15,6 +15,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.viewpager2.widget.ViewPager2
+import com.bergi.nbang_v1.data.Post // ✅ Post 데이터 클래스 임포트
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.firebase.auth.ktx.auth
@@ -26,6 +27,7 @@ class PostDetailActivity : AppCompatActivity() {
 
     private lateinit var firestore: FirebaseFirestore
     private var postId: String? = null
+    // ✅ Post 데이터 클래스 사용
     private var currentPost: Post? = null
 
     // UI 요소
@@ -44,7 +46,7 @@ class PostDetailActivity : AppCompatActivity() {
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
 
-    private val TAG = "PostDetailActivity" // 로그 태그
+    private val TAG = "PostDetailActivity"
 
     private val locationPermissionRequest = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -67,37 +69,17 @@ class PostDetailActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Log.d(TAG, "onCreate CALLED. Instance: ${System.identityHashCode(this)}")
-        Log.d(TAG, "Intent received: $intent")
-        if (intent.extras != null) {
-            val extras = intent.extras
-            val keys = extras?.keySet()?.joinToString(", ") ?: "null"
-            Log.d(TAG, "Intent extras keys: $keys")
-            // "postId" 키로 전달되는 값을 확인
-            extras?.getString("postId")?.let { Log.d(TAG, "Intent extra 'postId' (from key 'postId'): $it")}
-            // 혹시 다른 키로 전달될 가능성도 확인 (예: "POST_ID")
-            extras?.getString("POST_ID")?.let { Log.d(TAG, "Intent extra 'POST_ID' (from key 'POST_ID'): $it")}
-        } else {
-            Log.d(TAG, "Intent has no extras.")
-        }
-
         setContentView(R.layout.activity_post_detail)
 
         firestore = FirebaseFirestore.getInstance()
-
-        // Intent에서 postId를 가져오는 부분 수정
-        var receivedPostId: String? = intent.getStringExtra("postId") // 먼저 "postId" 키로 시도
-        if (receivedPostId == null) {
-            Log.w(TAG, "'postId' key not found or value is null in onCreate, trying 'POST_ID' key.")
-            receivedPostId = intent.getStringExtra("POST_ID") // "postId"가 없으면 "POST_ID" 키로 다시 시도
-        }
-        postId = receivedPostId // 최종적으로 찾은 값을 postId 변수에 할당
-
-        Log.d(TAG, "Final retrieved postId in onCreate (tried 'postId' then 'POST_ID'): $postId")
-
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
-        // UI 요소 초기화
+        var receivedPostId: String? = intent.getStringExtra("postId")
+        if (receivedPostId == null) {
+            receivedPostId = intent.getStringExtra("POST_ID")
+        }
+        postId = receivedPostId
+
         categoryTextView = findViewById(R.id.textViewDetailCategory)
         timestampTextView = findViewById(R.id.textViewDetailTimestamp)
         titleTextView = findViewById(R.id.textViewDetailTitle)
@@ -112,13 +94,11 @@ class PostDetailActivity : AppCompatActivity() {
         photoCountTextView = findViewById(R.id.photoCountTextView)
 
         if (postId == null) {
-            Log.w(TAG, "postId is null in onCreate after checking both keys. Showing error toast and finishing.")
             Toast.makeText(this, "게시글 정보를 불러올 수 없습니다.", Toast.LENGTH_SHORT).show()
             finish()
             return
         }
 
-        Log.d(TAG, "postId is '$postId' in onCreate, proceeding to loadPostDetails.")
         loadPostDetails()
 
         joinButton.setOnClickListener {
@@ -130,79 +110,32 @@ class PostDetailActivity : AppCompatActivity() {
         }
     }
 
-    override fun onNewIntent(intent: Intent?) {
-        super.onNewIntent(intent)
-        Log.d(TAG, "onNewIntent CALLED. Instance: ${System.identityHashCode(this)}")
-        if (intent != null) {
-            Log.d(TAG, "onNewIntent - Intent received: $intent")
-            if (intent.extras != null) {
-                val extras = intent.extras
-                val keys = extras?.keySet()?.joinToString(", ") ?: "null"
-                Log.d(TAG, "onNewIntent - Intent extras keys: $keys")
-                extras?.getString("postId")?.let { Log.d(TAG, "onNewIntent - Intent extra 'postId' (from key 'postId'): $it")}
-                extras?.getString("POST_ID")?.let { Log.d(TAG, "onNewIntent - Intent extra 'POST_ID' (from key 'POST_ID'): $it")}
-            } else {
-                Log.d(TAG, "onNewIntent - Intent has no extras.")
-            }
-            setIntent(intent) // 중요: 새로운 인텐트로 설정
-
-            var receivedPostIdFromNewIntent: String? = getIntent().getStringExtra("postId")
-            if (receivedPostIdFromNewIntent == null) {
-                Log.w(TAG, "onNewIntent - 'postId' key not found or value is null, trying 'POST_ID' key.")
-                receivedPostIdFromNewIntent = getIntent().getStringExtra("POST_ID")
-            }
-            postId = receivedPostIdFromNewIntent // 최종적으로 찾은 값을 postId 변수에 할당
-            Log.d(TAG, "onNewIntent - Final retrieved postId (tried 'postId' then 'POST_ID'): $postId")
-
-            if (postId == null) {
-                Log.w(TAG, "onNewIntent - postId is null after checking both keys. Showing error toast and finishing.")
-                Toast.makeText(this, "게시글 정보를 불러올 수 없습니다. (onNewIntent)", Toast.LENGTH_SHORT).show()
-                finish()
-                return
-            }
-            Log.d(TAG, "onNewIntent - postId is '$postId', proceeding to loadPostDetails.")
-            loadPostDetails()
-        } else {
-            Log.d(TAG, "onNewIntent - Received null intent.")
-        }
-    }
-
     private fun loadPostDetails() {
-        Log.d(TAG, "loadPostDetails CALLED for postId: $postId")
         if (postId == null) {
-            Log.e(TAG, "loadPostDetails - postId is null, cannot load details.")
-            if (!isFinishing) {
-                handleLoadError()
-            }
+            handleLoadError()
             return
         }
         firestore.collection("posts").document(postId!!)
             .get()
             .addOnSuccessListener { document ->
-                Log.d(TAG, "loadPostDetails - Firestore get success for postId: $postId. Document exists: ${document?.exists()}")
                 if (document != null && document.exists()) {
                     currentPost = document.toObject(Post::class.java)
                     if (currentPost != null) {
-                        Log.d(TAG, "loadPostDetails - Successfully converted document to Post object.")
                         updateUI(currentPost!!)
                         checkLocationPermission()
                     } else {
-                        Log.e(TAG, "loadPostDetails - Failed to convert document to Post object (currentPost is null).")
                         handleLoadError()
                     }
                 } else {
-                    Log.w(TAG, "loadPostDetails - Document does not exist for postId: $postId")
                     handleLoadError()
                 }
             }
             .addOnFailureListener { exception ->
-                Log.e(TAG, "loadPostDetails - Error getting document for postId: $postId", exception)
                 handleLoadError()
             }
     }
 
     private fun updateUI(post: Post) {
-        Log.d(TAG, "updateUI CALLED for post title: ${post.title}")
         titleTextView.text = post.title
         categoryTextView.text = post.category
         contentTextView.text = post.content
@@ -243,16 +176,13 @@ class PostDetailActivity : AppCompatActivity() {
     }
 
     private fun checkLocationPermission() {
-        Log.d(TAG, "checkLocationPermission CALLED.")
         if (ContextCompat.checkSelfPermission(
                 this,
                 Manifest.permission.ACCESS_FINE_LOCATION
             ) == PackageManager.PERMISSION_GRANTED
         ) {
-            Log.d(TAG, "ACCESS_FINE_LOCATION already granted. Getting current location.")
             getCurrentLocation()
         } else {
-            Log.d(TAG, "Requesting location permissions (FINE and COARSE).")
             locationPermissionRequest.launch(
                 arrayOf(
                     Manifest.permission.ACCESS_FINE_LOCATION,
@@ -263,7 +193,6 @@ class PostDetailActivity : AppCompatActivity() {
     }
 
     private fun getCurrentLocation() {
-        Log.d(TAG, "getCurrentLocation CALLED.")
         if (ContextCompat.checkSelfPermission(
                 this,
                 Manifest.permission.ACCESS_FINE_LOCATION
@@ -272,14 +201,11 @@ class PostDetailActivity : AppCompatActivity() {
                 Manifest.permission.ACCESS_COARSE_LOCATION
             ) != PackageManager.PERMISSION_GRANTED
         ) {
-            Log.w(TAG, "getCurrentLocation - Location permissions not granted. Cannot get location.")
             return
         }
         fusedLocationClient.lastLocation
             .addOnSuccessListener { location: Location? ->
-                Log.d(TAG, "getCurrentLocation - FusedLocationClient success. Location: $location")
                 val postLocation = currentPost?.meetingLocation
-                Log.d(TAG, "getCurrentLocation - currentPost meetingLocation: $postLocation")
                 if (location != null && postLocation != null) {
                     val distance = calculateDistance(
                         location.latitude,
@@ -287,16 +213,13 @@ class PostDetailActivity : AppCompatActivity() {
                         postLocation.latitude,
                         postLocation.longitude
                     )
-                    Log.d(TAG, "getCurrentLocation - Calculated distance: $distance meters.")
                     distanceTextView.text = "약 ${String.format("%.1f", distance / 1000)}km 떨어져 있어요"
                     distanceTextView.visibility = View.VISIBLE
                 } else {
-                    Log.d(TAG, "getCurrentLocation - User location or post location is null. Hiding distanceTextView.")
                     distanceTextView.visibility = View.GONE
                 }
             }
-            .addOnFailureListener { e ->
-                Log.e(TAG, "getCurrentLocation - FusedLocationClient failed.", e)
+            .addOnFailureListener {
                 distanceTextView.visibility = View.GONE
             }
     }
@@ -308,12 +231,10 @@ class PostDetailActivity : AppCompatActivity() {
     }
 
     private fun showDeleteConfirmationDialog() {
-        Log.d(TAG, "showDeleteConfirmationDialog CALLED.")
         AlertDialog.Builder(this)
             .setTitle("게시글 삭제")
             .setMessage("정말 이 게시글을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.")
             .setPositiveButton("삭제") { _, _ ->
-                Log.d(TAG, "Delete confirmation - Positive button clicked.")
                 deletePost()
             }
             .setNegativeButton("취소", null)
@@ -322,26 +243,20 @@ class PostDetailActivity : AppCompatActivity() {
     }
 
     private fun deletePost() {
-        Log.d(TAG, "deletePost CALLED for postId: $postId")
         if (postId != null) {
             firestore.collection("posts").document(postId!!)
                 .delete()
                 .addOnSuccessListener {
-                    Log.d(TAG, "deletePost - Successfully deleted post: $postId")
                     Toast.makeText(this, "게시글이 삭제되었습니다.", Toast.LENGTH_SHORT).show()
                     finish()
                 }
                 .addOnFailureListener { e ->
-                    Log.e(TAG, "deletePost - Failed to delete post: $postId", e)
                     Toast.makeText(this, "삭제에 실패했습니다: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
-        } else {
-            Log.w(TAG, "deletePost - postId is null. Cannot delete.")
         }
     }
 
     private fun handleLoadError() {
-        Log.e(TAG, "handleLoadError CALLED. postId: $postId. Finishing activity.")
         Toast.makeText(this, "게시글 정보를 불러오는 데 실패했습니다.", Toast.LENGTH_SHORT).show()
         if (!isFinishing) {
             finish()

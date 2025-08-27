@@ -11,8 +11,8 @@ import com.bergi.nbang_v1.R
 import com.bergi.nbang_v1.data.Message
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
-import java.text.SimpleDateFormat // --- 추가 ---
-import java.util.Locale         // --- 추가 ---
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 class MessageAdapter : ListAdapter<Message, RecyclerView.ViewHolder>(DiffCallback) {
 
@@ -23,31 +23,31 @@ class MessageAdapter : ListAdapter<Message, RecyclerView.ViewHolder>(DiffCallbac
         private const val VIEW_TYPE_RECEIVED = 2
     }
 
-    // '내가 보낸 메시지'의 UI 요소를 보관하는 ViewHolder
     inner class SentMessageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val messageTextView: TextView = itemView.findViewById(R.id.textView_message)
-        private val timestampTextView: TextView = itemView.findViewById(R.id.textView_timestamp) // --- 추가 ---
+        private val timestampTextView: TextView = itemView.findViewById(R.id.textView_timestamp)
 
         fun bind(message: Message) {
             messageTextView.text = message.message
-            // Date 객체를 "오전/오후 h:mm" 형식의 문자열로 변환하여 설정
-            val format = SimpleDateFormat("a h:mm", Locale.KOREA) // --- 추가 ---
-            timestampTextView.text = format.format(message.timestamp) // --- 추가 ---
+            message.timestamp?.let { date ->
+                val format = SimpleDateFormat("a h:mm", Locale.KOREA)
+                timestampTextView.text = format.format(date)
+            }
         }
     }
 
-    // '상대방이 보낸 메시지'의 UI 요소를 보관하는 ViewHolder
     inner class ReceivedMessageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val messageTextView: TextView = itemView.findViewById(R.id.textView_message)
         private val senderTextView: TextView = itemView.findViewById(R.id.textView_sender)
-        private val timestampTextView: TextView = itemView.findViewById(R.id.textView_timestamp) // --- 추가 ---
+        private val timestampTextView: TextView = itemView.findViewById(R.id.textView_timestamp)
 
         fun bind(message: Message) {
             messageTextView.text = message.message
             senderTextView.text = message.senderUid
-            // Date 객체를 "오전/오후 h:mm" 형식의 문자열로 변환하여 설정
-            val format = SimpleDateFormat("a h:mm", Locale.KOREA) // --- 추가 ---
-            timestampTextView.text = format.format(message.timestamp) // --- 추가 ---
+            message.timestamp?.let { date ->
+                val format = SimpleDateFormat("a h:mm", Locale.KOREA)
+                timestampTextView.text = format.format(date)
+            }
         }
     }
 
@@ -83,7 +83,7 @@ class MessageAdapter : ListAdapter<Message, RecyclerView.ViewHolder>(DiffCallbac
 
     object DiffCallback : DiffUtil.ItemCallback<Message>() {
         override fun areItemsTheSame(oldItem: Message, newItem: Message): Boolean {
-            return oldItem.timestamp == newItem.timestamp
+            return oldItem.timestamp == newItem.timestamp && oldItem.senderUid == newItem.senderUid
         }
 
         override fun areContentsTheSame(oldItem: Message, newItem: Message): Boolean {

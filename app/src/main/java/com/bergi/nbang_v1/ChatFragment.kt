@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bergi.nbang_v1.adapter.ChatRoomAdapter
 import com.bergi.nbang_v1.data.ChatRoom
+import com.bergi.nbang_v1.data.ChatRoomItem
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
@@ -52,14 +53,21 @@ class ChatFragment : Fragment() {
             .whereArrayContains("participants", myUid)
             .orderBy("lastMessageTimestamp", Query.Direction.DESCENDING)
             .addSnapshotListener { snapshots, error ->
-                // if문에 else를 추가해서 return을 사용하지 않도록 구조를 변경합니다.
                 if (error != null) {
-                    // 오류가 있으면 로그만 남기고 아무것도 하지 않음
                     Log.w("ChatFragment", "Listen failed.", error)
-                } else if (snapshots != null) {
-                    // 오류가 없고, snapshots 데이터가 있을 때만 아래 코드를 실행
-                    val chatRooms = snapshots.toObjects(ChatRoom::class.java)
-                    adapter.submitList(chatRooms)
+                    return@addSnapshotListener
+                }
+
+                if (snapshots != null) {
+                    val chatRoomItems = mutableListOf<ChatRoomItem>()
+                    for (document in snapshots.documents) {
+                        val chatRoom = document.toObject(ChatRoom::class.java)
+                        if (chatRoom != null) {
+                            chatRoomItems.add(ChatRoomItem(document.id, chatRoom))
+                        }
+                    }
+                    // 'list =' 부분을 제거
+                    adapter.submitList(chatRoomItems)
                 }
             }
     }

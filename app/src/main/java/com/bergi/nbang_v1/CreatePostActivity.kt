@@ -1,29 +1,33 @@
 package com.bergi.nbang_v1
 
 import android.Manifest
-import android.app.Activity // Activity 임포트 추가
+import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Spinner
 import android.widget.Toast
-import androidx.activity.result.ActivityResultLauncher // ActivityResultLauncher 임포트 추가
+import androidx.activity.result.ActivityResultLauncher
 import androidx.appcompat.app.AppCompatActivity
+import androidx.activity.result.contract.ActivityResultContracts
+import com.firebase.geofire.GeoFireUtils
+import com.firebase.geofire.GeoLocation
 import com.google.android.gms.tasks.Tasks
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.GeoPoint // GeoPoint 임포트 추가
+import com.google.firebase.firestore.GeoPoint
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.ktx.storage
-import androidx.activity.result.contract.ActivityResultContracts
-import com.firebase.geofire.GeoFireUtils // GeoFire 유틸리티 추가
-import com.firebase.geofire.GeoLocation   // GeoFire 유틸리티 추가
+import com.bergi.nbang_v1.data.Post
+import com.bergi.nbang_v1.data.ChatRoom
 import java.io.InputStream
 import java.util.UUID
 
@@ -37,14 +41,14 @@ class CreatePostActivity : AppCompatActivity() {
     private lateinit var editTextTitle: EditText
     private lateinit var editTextContent: EditText
     private lateinit var editTextPeople: EditText
-    private lateinit var editTextPlace: EditText // 사용자가 직접 입력하거나 지도에서 선택한 장소 이름
+    private lateinit var editTextPlace: EditText
     private lateinit var createButton: Button
     private lateinit var selectPhotoButton: Button
-    private lateinit var buttonSelectPlace: Button // 지도에서 장소 선택 버튼
+    private lateinit var buttonSelectPlace: Button
 
     private val TAG = "CreatePostActivity"
     private val selectedPhotos = mutableListOf<Uri>()
-    private var selectedMeetingLocation: GeoPoint? = null // 지도에서 선택된 좌표
+    private var selectedMeetingLocation: GeoPoint? = null
 
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
@@ -71,7 +75,6 @@ class CreatePostActivity : AppCompatActivity() {
             }
         }
 
-    // SearchAddressActivity 결과를 처리하기 위한 ActivityResultLauncher
     private val searchAddressLauncher: ActivityResultLauncher<Intent> =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
@@ -234,44 +237,68 @@ class CreatePostActivity : AppCompatActivity() {
             return
         }
 
-        // GeoHash 계산 로직 추가
         var newGeohash: String? = null
         if (selectedMeetingLocation != null) {
             try {
                 val geoLocation = GeoLocation(selectedMeetingLocation!!.latitude, selectedMeetingLocation!!.longitude)
                 newGeohash = GeoFireUtils.getGeoHashForLocation(geoLocation)
-                Log.d(TAG, "Calculated Geohash: $newGeohash for location: $selectedMeetingLocation")
             } catch (e: Exception) {
                 Log.e(TAG, "Error calculating Geohash", e)
             }
-        } else {
-            Log.d(TAG, "selectedMeetingLocation is null, Geohash will be null.")
         }
 
         val newPost = Post(
+            creatorUid = currentUser.uid,
             title = title,
             content = content,
             category = category,
             creatorName = creatorName,
             photoUrls = photoUrls,
             totalPeople = totalPeople,
+            currentPeople = 1, // 최초 작성자 포함 1명
+            status = "모집중",
+            participants = listOf(currentUser.uid),
             meetingPlaceName = place,
             meetingLocation = selectedMeetingLocation,
-            geohash = newGeohash, // 계산된 geohash 저장
-            creatorUid = currentUser.uid,
-            participants = listOf(currentUser.uid)
+            geohash = newGeohash
         )
 
         firestore.collection("posts")
             .add(newPost)
             .addOnSuccessListener { documentReference ->
-                Log.d(TAG, "Post uploaded successfully: ${documentReference.id}. Geohash: $newGeohash")
-                Toast.makeText(this, "게시글이 등록되었습니다.", Toast.LENGTH_SHORT).show()
+                Log.d(TAG, "Post uploaded successfully: ${documentReference.id}.")
 
-                val intent = Intent(this, PostDetailActivity::class.java)
-                intent.putExtra("POST_ID", documentReference.id)
-                startActivity(intent)
-                finish()
+                val postId = documentReference.id
+                val postTitle = title
+
+                val chatRoomData = ChatRoom(
+                    postId = postId,
+                    postTitle = postTitle,
+                    participants = listOf(currentUser.uid),
+                    lastMessage = "채팅방이 생성되었습니다.",
+                    lastMessageTimestamp = Timestamp.now()
+                )
+
+                firestore.collection("chatRooms")
+                    .document(postId)
+                    .set(chatRoomData)
+                    .addOnSuccessListener {
+                        Log.d(TAG, "Chat room successfully created for postId: $postId")
+                        Toast.makeText(this, "게시글과 채팅방이 성공적으로 등록되었습니다.", Toast.LENGTH_SHORT).show()
+
+                        val intent = Intent(this, PostDetailActivity::class.java)
+                        intent.putExtra("POST_ID", postId)
+                        startActivity(intent)
+                        finish()
+                    }
+                    .addOnFailureListener { e ->
+                        Log.e(TAG, "Error creating chat room for postId: $postId", e)
+                        Toast.makeText(this, "게시글은 등록되었으나 채팅방 생성에 실패했습니다.", Toast.LENGTH_LONG).show()
+                        val intent = Intent(this, PostDetailActivity::class.java)
+                        intent.putExtra("POST_ID", postId)
+                        startActivity(intent)
+                        finish()
+                    }
             }
             .addOnFailureListener { e ->
                 Log.w(TAG, "Error uploading post", e)

@@ -1,9 +1,11 @@
 package com.bergi.nbang_v1.data
 
-import java.util.Date
+import com.google.firebase.firestore.ServerTimestamp
+import com.google.firebase.Timestamp
 
 data class Message(
-    val senderUid: String = "",
-    val message: String = "",
-    val timestamp: Date = Date()
+    val senderUid: String? = null,
+    val message: String? = null,
+    @ServerTimestamp
+    val timestamp: Timestamp? = null
 )
