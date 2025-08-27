@@ -1,12 +1,12 @@
 package com.bergi.nbang_v1
 
+import com.bergi.nbang_v1.data.Post
 import android.Manifest
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
-import android.view.View
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
@@ -14,11 +14,7 @@ import android.widget.Spinner
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.appcompat.app.AppCompatActivity
-import androidx.activity.result.contract.ActivityResultContracts
-import com.firebase.geofire.GeoFireUtils
-import com.firebase.geofire.GeoLocation
 import com.google.android.gms.tasks.Tasks
-import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -26,8 +22,10 @@ import com.google.firebase.firestore.GeoPoint
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.ktx.storage
-import com.bergi.nbang_v1.data.Post
-import com.bergi.nbang_v1.data.ChatRoom
+import androidx.activity.result.contract.ActivityResultContracts
+import com.firebase.geofire.GeoFireUtils
+import com.firebase.geofire.GeoLocation
+import com.google.firebase.firestore.FieldValue // FieldValue 임포트 확인
 import java.io.InputStream
 import java.util.UUID
 
@@ -242,68 +240,64 @@ class CreatePostActivity : AppCompatActivity() {
             try {
                 val geoLocation = GeoLocation(selectedMeetingLocation!!.latitude, selectedMeetingLocation!!.longitude)
                 newGeohash = GeoFireUtils.getGeoHashForLocation(geoLocation)
+                Log.d(TAG, "Calculated Geohash: $newGeohash for location: $selectedMeetingLocation")
             } catch (e: Exception) {
                 Log.e(TAG, "Error calculating Geohash", e)
             }
+        } else {
+            Log.d(TAG, "selectedMeetingLocation is null, Geohash will be null.")
         }
 
         val newPost = Post(
-            creatorUid = currentUser.uid,
             title = title,
             content = content,
             category = category,
             creatorName = creatorName,
             photoUrls = photoUrls,
             totalPeople = totalPeople,
-            currentPeople = 1, // 최초 작성자 포함 1명
-            status = "모집중",
-            participants = listOf(currentUser.uid),
             meetingPlaceName = place,
             meetingLocation = selectedMeetingLocation,
-            geohash = newGeohash
+            geohash = newGeohash,
+            creatorUid = currentUser.uid,
+            participants = listOf(currentUser.uid) // Post 객체 생성 시 참여자에 본인 추가
         )
 
         firestore.collection("posts")
             .add(newPost)
             .addOnSuccessListener { documentReference ->
-                Log.d(TAG, "Post uploaded successfully: ${documentReference.id}.")
-
                 val postId = documentReference.id
-                val postTitle = title
+                Log.d(TAG, "Post uploaded successfully: $postId. Geohash: $newGeohash")
+                Toast.makeText(this, "게시글이 등록되었습니다.", Toast.LENGTH_SHORT).show()
 
-                val chatRoomData = ChatRoom(
-                    postId = postId,
-                    postTitle = postTitle,
-                    participants = listOf(currentUser.uid),
-                    lastMessage = "채팅방이 생성되었습니다.",
-                    lastMessageTimestamp = Timestamp.now()
+                // 채팅방 생성 로직
+                val chatRoomData = hashMapOf(
+                    "postId" to postId,
+                    "postTitle" to newPost.title, // Post 객체의 title 사용
+                    "creatorUid" to currentUser.uid,
+                    "participants" to listOf(currentUser.uid), // 초기 참여자는 본인
+                    "createdAt" to FieldValue.serverTimestamp(),
+                    "lastMessageTimestamp" to FieldValue.serverTimestamp(),
+                    "lastMessageText" to "" // 초기에는 빈 값
                 )
 
-                firestore.collection("chatRooms")
-                    .document(postId)
+                firestore.collection("chatRooms").document(postId)
                     .set(chatRoomData)
                     .addOnSuccessListener {
-                        Log.d(TAG, "Chat room successfully created for postId: $postId")
-                        Toast.makeText(this, "게시글과 채팅방이 성공적으로 등록되었습니다.", Toast.LENGTH_SHORT).show()
-
-                        val intent = Intent(this, PostDetailActivity::class.java)
-                        intent.putExtra("POST_ID", postId)
-                        startActivity(intent)
-                        finish()
+                        Log.d(TAG, "Chat room created successfully for post ID: $postId")
                     }
                     .addOnFailureListener { e ->
-                        Log.e(TAG, "Error creating chat room for postId: $postId", e)
-                        Toast.makeText(this, "게시글은 등록되었으나 채팅방 생성에 실패했습니다.", Toast.LENGTH_LONG).show()
-                        val intent = Intent(this, PostDetailActivity::class.java)
-                        intent.putExtra("POST_ID", postId)
-                        startActivity(intent)
-                        finish()
+                        Log.w(TAG, "Error creating chat room for post ID: $postId", e)
                     }
+
+                val intent = Intent(this, PostDetailActivity::class.java)
+                intent.putExtra("POST_ID", postId)
+                startActivity(intent)
+                finish() // CreatePostActivity 종료
             }
             .addOnFailureListener { e ->
                 Log.w(TAG, "Error uploading post", e)
                 Toast.makeText(this, "게시글 등록에 실패했습니다: ${e.message}", Toast.LENGTH_LONG).show()
-                createButton.isEnabled = true
+                createButton.isEnabled = true // 실패 시 버튼 다시 활성화
             }
     }
 }

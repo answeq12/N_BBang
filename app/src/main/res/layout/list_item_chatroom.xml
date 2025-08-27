@@ -6,18 +6,14 @@
     android:padding="16dp"
     android:gravity="center_vertical">
 
-    <ImageView
-        android:id="@+id/iv_chatroom_icon"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:src="@mipmap/ic_launcher" />
+    <!-- ImageView (iv_chatroom_icon) 삭제됨 -->
 
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:orientation="vertical"
-        android:layout_marginStart="16dp">
+        android:layout_marginStart="0dp"> <!-- 기존 ImageView가 없으므로 marginStart를 0dp로 조정하거나 삭제 -->
 
         <TextView
             android:id="@+id/tv_chatroom_title"
@@ -37,5 +33,23 @@
             android:maxLines="1"
             android:ellipsize="end"/>
     </LinearLayout>
+
+    <TextView
+        android:id="@+id/tv_unread_count"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:background="@drawable/unread_count_background"
+        android:textColor="@android:color/black"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:paddingLeft="8dp"
+        android:paddingRight="8dp"
+        android:paddingTop="4dp"
+        android:paddingBottom="4dp"
+        android:gravity="center"
+        android:visibility="gone"
+        android:minWidth="24dp"
+        android:text="0"/> <!-- 기본값 및 테스트용 텍스트 -->
 
 </LinearLayout>

@@ -12,6 +12,7 @@ import com.bergi.nbang_v1.data.Message
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import java.text.SimpleDateFormat
+import java.util.Date // Import java.util.Date
 import java.util.Locale
 
 class MessageAdapter : ListAdapter<Message, RecyclerView.ViewHolder>(DiffCallback) {
@@ -29,9 +30,10 @@ class MessageAdapter : ListAdapter<Message, RecyclerView.ViewHolder>(DiffCallbac
 
         fun bind(message: Message) {
             messageTextView.text = message.message
-            message.timestamp?.let { date ->
+            message.timestamp?.let { firebaseTimestamp -> // Variable name changed for clarity
+                val javaUtilDate: Date = firebaseTimestamp.toDate() // Convert Firebase Timestamp to java.util.Date
                 val format = SimpleDateFormat("a h:mm", Locale.KOREA)
-                timestampTextView.text = format.format(date)
+                timestampTextView.text = format.format(javaUtilDate)
             }
         }
     }
@@ -44,9 +46,10 @@ class MessageAdapter : ListAdapter<Message, RecyclerView.ViewHolder>(DiffCallbac
         fun bind(message: Message) {
             messageTextView.text = message.message
             senderTextView.text = message.senderUid
-            message.timestamp?.let { date ->
+            message.timestamp?.let { firebaseTimestamp -> // Variable name changed for clarity
+                val javaUtilDate: Date = firebaseTimestamp.toDate() // Convert Firebase Timestamp to java.util.Date
                 val format = SimpleDateFormat("a h:mm", Locale.KOREA)
-                timestampTextView.text = format.format(date)
+                timestampTextView.text = format.format(javaUtilDate)
             }
         }
     }
