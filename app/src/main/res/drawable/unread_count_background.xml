@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#FFEB3B"/> <!-- 노란색 (예: Yellow 500) -->
+    <corners android:radius="12dp"/> <!-- 둥근 모서리, 값 조절 가능 -->
+</shape>
