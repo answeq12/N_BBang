@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     id("kotlin-kapt")
     alias(libs.plugins.google.gms.google.services)
+    id("com.google.dagger.hilt.android") // Hilt 플러그인 적용
 }
 
 android {
@@ -37,8 +38,20 @@ android {
     }
 }
 
+// Hilt를 위한 kapt 설정 추가
+kapt {
+    correctErrorTypes = true
+}
+
+
 dependencies {
 
+    // Hilt 의존성 추가
+    implementation("com.google.dagger:hilt-android:2.51.1")
+    kapt("com.google.dagger:hilt-android-compiler:2.51.1")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.3")
+
+    // --- 기존 의존성은 그대로 둡니다 ---
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
@@ -60,7 +73,7 @@ dependencies {
     // Firebase Storage 라이브러리
     implementation("com.google.firebase:firebase-storage-ktx")
 
-    implementation(platform("com.google.firebase:firebase-bom:33.1.2")) // 이미 있다면 버전 확인
+    implementation(platform("com.google.firebase:firebase-bom:33.1.2"))
     implementation("com.google.firebase:firebase-messaging-ktx")
 
     // Glide 라이브러리
