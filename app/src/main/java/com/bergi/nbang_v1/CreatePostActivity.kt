@@ -25,7 +25,7 @@ import com.google.firebase.storage.ktx.storage
 import androidx.activity.result.contract.ActivityResultContracts
 import com.firebase.geofire.GeoFireUtils
 import com.firebase.geofire.GeoLocation
-import com.google.firebase.firestore.FieldValue // FieldValue 임포트 확인
+import com.google.firebase.firestore.FieldValue
 import java.io.InputStream
 import java.util.UUID
 
@@ -259,7 +259,7 @@ class CreatePostActivity : AppCompatActivity() {
             meetingLocation = selectedMeetingLocation,
             geohash = newGeohash,
             creatorUid = currentUser.uid,
-            participants = listOf(currentUser.uid) // Post 객체 생성 시 참여자에 본인 추가
+            participants = listOf(currentUser.uid)
         )
 
         firestore.collection("posts")
@@ -270,14 +270,15 @@ class CreatePostActivity : AppCompatActivity() {
                 Toast.makeText(this, "게시글이 등록되었습니다.", Toast.LENGTH_SHORT).show()
 
                 // 채팅방 생성 로직
+                // ChatRoom 데이터 클래스에 맞게 수정
                 val chatRoomData = hashMapOf(
                     "postId" to postId,
-                    "postTitle" to newPost.title, // Post 객체의 title 사용
+                    "postTitle" to newPost.title,
                     "creatorUid" to currentUser.uid,
-                    "participants" to listOf(currentUser.uid), // 초기 참여자는 본인
+                    "participants" to listOf(currentUser.uid),
                     "createdAt" to FieldValue.serverTimestamp(),
                     "lastMessageTimestamp" to FieldValue.serverTimestamp(),
-                    "lastMessageText" to "" // 초기에는 빈 값
+                    "lastMessage" to "" // "lastMessageText"를 "lastMessage"로 변경
                 )
 
                 firestore.collection("chatRooms").document(postId)
@@ -292,12 +293,12 @@ class CreatePostActivity : AppCompatActivity() {
                 val intent = Intent(this, PostDetailActivity::class.java)
                 intent.putExtra("POST_ID", postId)
                 startActivity(intent)
-                finish() // CreatePostActivity 종료
+                finish()
             }
             .addOnFailureListener { e ->
                 Log.w(TAG, "Error uploading post", e)
                 Toast.makeText(this, "게시글 등록에 실패했습니다: ${e.message}", Toast.LENGTH_LONG).show()
-                createButton.isEnabled = true // 실패 시 버튼 다시 활성화
+                createButton.isEnabled = true
             }
     }
 }

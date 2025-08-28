@@ -12,12 +12,14 @@ import com.bergi.nbang_v1.data.Message
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
 import java.text.SimpleDateFormat
-import java.util.Date // Import java.util.Date
+import java.util.Date
 import java.util.Locale
+import com.google.firebase.firestore.FirebaseFirestore
 
 class MessageAdapter : ListAdapter<Message, RecyclerView.ViewHolder>(DiffCallback) {
 
     private val currentUserUid = Firebase.auth.currentUser?.uid
+    private val firestore = FirebaseFirestore.getInstance() // Firestore 인스턴스 추가
 
     companion object {
         private const val VIEW_TYPE_SENT = 1
@@ -30,8 +32,8 @@ class MessageAdapter : ListAdapter<Message, RecyclerView.ViewHolder>(DiffCallbac
 
         fun bind(message: Message) {
             messageTextView.text = message.message
-            message.timestamp?.let { firebaseTimestamp -> // Variable name changed for clarity
-                val javaUtilDate: Date = firebaseTimestamp.toDate() // Convert Firebase Timestamp to java.util.Date
+            message.timestamp?.let { firebaseTimestamp ->
+                val javaUtilDate: Date = firebaseTimestamp.toDate()
                 val format = SimpleDateFormat("a h:mm", Locale.KOREA)
                 timestampTextView.text = format.format(javaUtilDate)
             }
@@ -45,11 +47,24 @@ class MessageAdapter : ListAdapter<Message, RecyclerView.ViewHolder>(DiffCallbac
 
         fun bind(message: Message) {
             messageTextView.text = message.message
-            senderTextView.text = message.senderUid
-            message.timestamp?.let { firebaseTimestamp -> // Variable name changed for clarity
-                val javaUtilDate: Date = firebaseTimestamp.toDate() // Convert Firebase Timestamp to java.util.Date
+            message.timestamp?.let { firebaseTimestamp ->
+                val javaUtilDate: Date = firebaseTimestamp.toDate()
                 val format = SimpleDateFormat("a h:mm", Locale.KOREA)
                 timestampTextView.text = format.format(javaUtilDate)
+            }
+
+            // 닉네임 가져오기 및 설정
+            message.senderUid?.let { uid ->
+                firestore.collection("users").document(uid).get()
+                    .addOnSuccessListener { document ->
+                        val nickname = document.getString("nickname")
+                        senderTextView.text = nickname ?: "알 수 없음"
+                    }
+                    .addOnFailureListener {
+                        senderTextView.text = "오류"
+                    }
+            } ?: run {
+                senderTextView.text = "알 수 없음"
             }
         }
     }

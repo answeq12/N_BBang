@@ -100,21 +100,32 @@ class ChatRoomActivity : AppCompatActivity() {
             return
         }
 
-        val message = Message(
-            senderUid = currentUser.uid,
-            message = messageText,
-            timestamp = Timestamp.now()
-        )
+        // Firestore에서 현재 사용자의 닉네임 가져오기
+        firestore.collection("users").document(currentUser.uid).get()
+            .addOnSuccessListener { document ->
+                val senderName = document.getString("nickname") ?: "익명"
 
-        firestore.collection("chatRooms").document(chatRoomId!!)
-            .collection("messages").add(message)
-            .addOnSuccessListener {
-                Log.d("ChatRoomActivity", "메시지 전송 성공")
-                messageEditText.text.clear()
-                updateLastMessage(messageText)
+                val message = Message(
+                    senderUid = currentUser.uid,
+                    senderName = senderName, // 닉네임 필드 추가
+                    message = messageText,
+                    timestamp = Timestamp.now()
+                )
+
+                firestore.collection("chatRooms").document(chatRoomId!!)
+                    .collection("messages").add(message)
+                    .addOnSuccessListener {
+                        Log.d("ChatRoomActivity", "메시지 전송 성공")
+                        messageEditText.text.clear()
+                        updateLastMessage(messageText)
+                    }
+                    .addOnFailureListener { e ->
+                        Log.w("ChatRoomActivity", "메시지 전송 실패", e)
+                        Toast.makeText(this, "메시지 전송에 실패했습니다.", Toast.LENGTH_SHORT).show()
+                    }
             }
             .addOnFailureListener { e ->
-                Log.w("ChatRoomActivity", "메시지 전송 실패", e)
+                Log.w("ChatRoomActivity", "사용자 정보 조회 실패", e)
                 Toast.makeText(this, "메시지 전송에 실패했습니다.", Toast.LENGTH_SHORT).show()
             }
     }

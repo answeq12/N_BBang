@@ -1,13 +1,17 @@
 package com.bergi.nbang_v1.data
 
 import com.google.firebase.Timestamp
-import com.google.firebase.firestore.FieldValue // Firebase ServerTimestamp 사용 시 필요
+import com.google.firebase.firestore.ServerTimestamp
 
 data class ChatRoom(
-    val postId: String? = null,
-    val postTitle: String? = null,
-    val participants: List<String>? = null,
-    var lastMessage: String? = null, // var로 변경하여 업데이트 가능하게 (선택 사항)
-    var lastMessageTimestamp: Timestamp? = null, // var로 변경 (선택 사항)
-    var unreadCount: Int = 0 // 읽지 않은 메시지 수를 위한 필드 추가, 기본값 0
+    var postId: String? = null,
+    var postTitle: String? = null,
+    var creatorUid: String? = null, // 게시글 작성자 UID 필드 추가
+    var participants: List<String>? = null,
+    var lastMessage: String? = null,
+    @ServerTimestamp
+    var lastMessageTimestamp: Timestamp? = null,
+    @ServerTimestamp
+    var createdAt: Timestamp? = null, // 채팅방 생성 시간 필드 추가
+    var unreadCount: Int = 0
 )
