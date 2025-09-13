@@ -94,7 +94,6 @@
 
     <!-- 중간 버튼 메뉴 -->
     <LinearLayout
-        android:id="@+id/linearLayoutButtons"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
@@ -132,7 +131,6 @@
 
         <!-- 후기 작성 버튼 -->
         <com.google.android.material.card.MaterialCardView
-            android:id="@+id/cardWriteReview"
             android:layout_width="0dp"
             android:layout_height="100dp"
             android:layout_weight="1"
@@ -188,8 +186,9 @@
     </LinearLayout>
 
     <!-- 동네 인증하기 버튼 -->
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/buttonCertifyLocation"
+        style="@style/YellowContainedButton"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:text="동네 인증하기"
