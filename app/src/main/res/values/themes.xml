@@ -1,14 +1,41 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
     <style name="Base.Theme.Nbang_v1" parent="Theme.Material3.DayNight.NoActionBar">
-
-    </style>
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
-    <style name="Theme.Nbang_v1.NoActionBar" parent="Theme.Nbang_v1">
-        <item name="windowActionBar">false</item>
-        <item name="windowNoTitle">true</item>
+        <item name="android:statusBarColor" tools:targetApi="l">@color/fab_yellow_background</item>
+        <item name="colorControlHighlight">@color/ripple_light_gray</item>
     </style>
 
+    <style name="YellowOutlinedButton" parent="Widget.MaterialComponents.Button.OutlinedButton">
+        <item name="strokeColor">@color/fab_yellow_background</item>
+        <item name="android:textColor">@color/fab_yellow_background</item>
+    </style>
+
+    <style name="GrayContainedButton" parent="Widget.MaterialComponents.Button">
+        <item name="android:backgroundTint">@color/unselected_gray</item>
+        <item name="android:textColor">@color/text_primary</item>
+    </style>
+
+    <style name="YellowContainedButton" parent="Widget.MaterialComponents.Button">
+        <item name="android:backgroundTint">@color/fab_yellow_background</item>
+        <item name="android:textColor">@android:color/white</item>
+    </style>
+
+    <style name="YellowSlider" parent="Widget.MaterialComponents.Slider">
+        <item name="trackColorActive">@color/fab_yellow_background</item>   <item name="trackColorInactive">@color/unselected_gray</item>     <item name="thumbColor">@color/fab_yellow_background</item>
+        <item name="labelStyle">@style/YellowTooltip</item>
+    </style>
+
+    <style name="YellowTooltip" parent="Widget.MaterialComponents.Tooltip">
+        <item name="android:backgroundTint">@color/fab_yellow_background</item>
+        <item name="android:textColor">@android:color/white</item>
+    </style>
+
+    <style name="Theme.Nbang_v1.NoActionBar" parent="Theme.Nbang_v1" />
     <style name="Theme.Nbang_v1" parent="Base.Theme.Nbang_v1" />
+
+    <!-- Custom Style for BottomNavigationView -->
+    <style name="CustomBottomNavigationView" parent="Widget.Material3.BottomNavigationView">
+        <!-- <item name="itemActiveIndicatorColor">@color/bottom_nav_active_indicator_gray</item> Temporarily Removed -->
+        <item name="itemBackground">@drawable/bottom_nav_item_background_selector</item>
+    </style>
 </resources>

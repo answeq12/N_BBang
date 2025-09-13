@@ -8,24 +8,25 @@
     android:layout_marginTop="8dp"
     android:layout_marginEnd="16dp"
     android:layout_marginBottom="8dp"
-    app:cardElevation="4dp"
-    app:cardCornerRadius="8dp">
+    app:cardBackgroundColor="@color/light_gray_background"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="4dp">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="12dp">
+        android:padding="16dp">
 
         <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/imageViewThumbnail"
-            android:layout_width="72dp"
-            android:layout_height="72dp"
-            android:layout_marginEnd="12dp"
+            android:layout_width="110dp"
+            android:layout_height="0dp"
             android:scaleType="centerCrop"
             android:visibility="gone"
+            app:layout_constraintDimensionRatio="1:1"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent"
             app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Medium"
             tools:src="@tools:sample/backgrounds/scenic"
             tools:visibility="visible" />
@@ -34,14 +35,14 @@
             android:id="@+id/textViewPostCategory"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
+            android:layout_marginStart="16dp"
             android:background="@drawable/background_category_chip"
-            android:paddingStart="6dp"
-            android:paddingTop="2dp"
-            android:paddingEnd="6dp"
-            android:paddingBottom="2dp"
-            android:textColor="?attr/colorPrimary"
-            android:textSize="10sp"
+            android:paddingStart="8dp"
+            android:paddingTop="4dp"
+            android:paddingEnd="8dp"
+            android:paddingBottom="4dp"
+            android:textColor="@color/text_primary"
+            android:textSize="12sp"
             android:textStyle="bold"
             app:layout_constraintStart_toEndOf="@+id/imageViewThumbnail"
             app:layout_constraintTop_toTopOf="parent"
@@ -51,11 +52,11 @@
             android:id="@+id/textViewPostStatus"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="10sp"
+            android:textSize="12sp"
             android:textStyle="bold"
+            app:layout_constraintBottom_toBottomOf="@+id/textViewPostCategory"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="@+id/textViewPostCategory"
-            app:layout_constraintBottom_toBottomOf="@+id/textViewPostCategory"
             tools:text="모집중"
             tools:textColor="@color/status_recruiting" />
 
@@ -63,34 +64,35 @@
             android:id="@+id/textViewPostTitle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
+            android:layout_marginTop="8dp"
             android:ellipsize="end"
-            android:maxLines="1"
+            android:maxLines="2"
+            android:minHeight="48dp"
             android:textAppearance="?attr/textAppearanceListItem"
-            android:textSize="16sp"
+            android:textSize="18sp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="@+id/textViewPostCategory"
             app:layout_constraintTop_toBottomOf="@+id/textViewPostCategory"
-            tools:text="BHC 뿌링클 치킨 같이 시키실 분 구해요!" />
+            tools:text="BHC 뿌링클 치킨 같이 시키실 분 구해요! 오늘 저녁에 바로 시킬 예정입니다. 한 마리로는 부족하신 분들 함께해요." />
 
         <ImageView
             android:id="@+id/iconPeople"
-            android:layout_width="14dp"
-            android:layout_height="14dp"
-            android:layout_marginTop="8dp"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:layout_marginBottom="4dp"
             android:src="@drawable/ic_people"
+            app:layout_constraintBottom_toTopOf="@+id/iconLocation"
             app:layout_constraintStart_toStartOf="@+id/textViewPostTitle"
-            app:layout_constraintTop_toBottomOf="@+id/textViewPostTitle"
-            app:tint="?android:attr/textColorSecondary"/>
+            app:tint="?android:attr/textColorSecondary" />
 
         <TextView
             android:id="@+id/textViewPostPeople"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="4dp"
+            android:layout_marginStart="8dp"
             android:textAppearance="?attr/textAppearanceBody2"
             android:textColor="?android:attr/textColorSecondary"
-            android:textSize="12sp"
+            android:textSize="14sp"
             app:layout_constraintBottom_toBottomOf="@+id/iconPeople"
             app:layout_constraintStart_toEndOf="@+id/iconPeople"
             app:layout_constraintTop_toTopOf="@+id/iconPeople"
@@ -98,34 +100,35 @@
 
         <ImageView
             android:id="@+id/iconLocation"
-            android:layout_width="14dp"
-            android:layout_height="14dp"
-            android:layout_marginTop="4dp"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
             android:src="@drawable/ic_location"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="@+id/textViewPostTitle"
-            app:layout_constraintTop_toBottomOf="@+id/iconPeople"
-            app:tint="?android:attr/textColorSecondary"/>
+            app:tint="?android:attr/textColorSecondary" />
 
         <TextView
             android:id="@+id/textViewPostMeetingPlace"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="4dp"
+            android:layout_marginStart="8dp"
+            android:ellipsize="end"
+            android:maxLines="1"
             android:textAppearance="?attr/textAppearanceBody2"
             android:textColor="?android:attr/textColorSecondary"
-            android:textSize="12sp"
+            android:textSize="14sp"
             app:layout_constraintBottom_toBottomOf="@+id/iconLocation"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toEndOf="@+id/iconLocation"
             app:layout_constraintTop_toTopOf="@+id/iconLocation"
-            app:layout_constraintEnd_toEndOf="parent"
-            tools:text="강남역 10번 출구 앞" />
+            tools:text="강남역 10번 출구 앞에서 만나요" />
 
         <TextView
             android:id="@+id/textViewPostTimestamp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textColor="?android:attr/textColorSecondary"
-            android:textSize="10sp"
+            android:textSize="12sp"
             app:layout_constraintBottom_toBottomOf="@+id/textViewPostPeople"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="@+id/textViewPostPeople"

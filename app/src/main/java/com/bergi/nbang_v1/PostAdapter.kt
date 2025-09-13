@@ -1,4 +1,4 @@
-package com.bergi.nbang_v1.adapter
+package com.bergi.nbang_v1
 
 import android.view.LayoutInflater
 import android.view.View

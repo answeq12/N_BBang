@@ -26,7 +26,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import com.firebase.geofire.GeoFireUtils
 import com.firebase.geofire.GeoLocation
 import com.google.firebase.firestore.FieldValue
-import java.io.InputStream
+// InputStream은 uploadPhotos 함수 내에서만 사용되므로 여기서는 제거해도 무방.
+// import java.io.InputStream
 import java.util.UUID
 
 class CreatePostActivity : AppCompatActivity() {
@@ -162,34 +163,34 @@ class CreatePostActivity : AppCompatActivity() {
     private fun uploadPhotos() {
         createButton.isEnabled = false
         val uploadTasks = selectedPhotos.mapNotNull { uri ->
-            var inputStream: InputStream? = null
             try {
-                inputStream = contentResolver.openInputStream(uri)
-                if (inputStream != null) {
+                // contentResolver.openInputStream(uri)가 null을 반환할 수 있으므로,
+                // 이를 안전 호출(.?)과 let 스코프 함수로 처리합니다.
+                contentResolver.openInputStream(uri)?.let { inputStream -> // inputStream이 null이 아닐 때만 실행
                     val photoRef = storage.reference.child("images/${UUID.randomUUID()}.jpg")
                     photoRef.putStream(inputStream).continueWithTask { task ->
+                        // inputStream은 여기서 닫지 않습니다. Firebase SDK가 관리합니다.
                         if (!task.isSuccessful) {
                             task.exception?.let { throw it }
                         }
                         photoRef.downloadUrl
                     }
-                } else {
-                    null
-                }
-            } finally {
-                inputStream?.close()
+                } // inputStream이 null이면 mapNotNull에 의해 null이 반환되어 걸러집니다.
+            } catch (e: Exception) {
+                Log.e(TAG, "Error preparing upload for URI: $uri", e)
+                null // 오류 발생 시 null을 반환하여 이 URI는 업로드 목록에서 제외
             }
         }
 
         if (uploadTasks.isEmpty() && selectedPhotos.isNotEmpty()) {
-            Log.w(TAG, "Failed to open input stream for some or all photos.")
-            Toast.makeText(this, "일부 사진을 처리하는데 실패했습니다. 다시 시도해주세요.", Toast.LENGTH_LONG).show()
+            Log.w(TAG, "Failed to prepare any photos for upload or all input streams were null.")
+            Toast.makeText(this, "사진을 업로드 준비하는데 실패했습니다. 다시 시도해주세요.", Toast.LENGTH_LONG).show()
             createButton.isEnabled = true
             return
         }
 
         if (uploadTasks.isEmpty() && selectedPhotos.isEmpty()) {
-            createPost(emptyList())
+            createPost(emptyList()) // 업로드할 사진이 애초에 없었던 경우
             return
         }
 

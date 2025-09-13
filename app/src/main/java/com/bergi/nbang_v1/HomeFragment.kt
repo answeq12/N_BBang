@@ -11,7 +11,7 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.bergi.nbang_v1.adapter.PostAdapter
+import com.bergi.nbang_v1.PostAdapter
 import com.bergi.nbang_v1.data.Post
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks

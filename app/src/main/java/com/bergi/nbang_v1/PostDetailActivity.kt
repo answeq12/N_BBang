@@ -15,8 +15,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.viewpager2.widget.ViewPager2
-import com.bergi.nbang_v1.data.Post // Post.kt 경로가 맞는지 확인
-// com.bergi.nbang_v1.adapter.PhotoAdapter // PhotoAdapter import 필요
+import com.bergi.nbang_v1.data.Post
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.firebase.auth.FirebaseAuth

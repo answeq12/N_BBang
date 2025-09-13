@@ -8,7 +8,7 @@ import android.widget.TextView
 import androidx.appcompat.widget.Toolbar
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.bergi.nbang_v1.adapter.PostAdapter
+import com.bergi.nbang_v1.PostAdapter
 import com.bergi.nbang_v1.data.Post // ✅ Post 데이터 클래스 임포트
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
