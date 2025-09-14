@@ -20,8 +20,19 @@
             android:layout_height="?attr/actionBarSize"
             app:title="채팅방 제목"
             app:subtitle="참여자 수"
-            app:navigationIcon="@drawable/ic_arrow_back" />
+            app:navigationIcon="@drawable/ic_arrow_back" >
 
+            <!-- 메뉴 버튼 추가 -->
+            <ImageView
+                android:id="@+id/menuButton"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/ic_menu"
+                android:layout_gravity="end|center_vertical"
+                android:layout_marginEnd="16dp"
+                android:contentDescription="채팅방 메뉴" />
+
+        </com.google.android.material.appbar.MaterialToolbar>
     </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.recyclerview.widget.RecyclerView
@@ -73,6 +84,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_marginEnd="16dp"
         android:layout_marginBottom="8dp"
+        android:visibility="gone"
         tools:visibility="visible" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

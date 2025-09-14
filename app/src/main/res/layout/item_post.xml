@@ -58,7 +58,7 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="@+id/textViewPostCategory"
             tools:text="모집중"
-            tools:textColor="@color/status_recruiting" />
+            android:textColor="@color/status_recruiting" />
 
         <TextView
             android:id="@+id/textViewPostTitle"
@@ -83,7 +83,7 @@
             android:src="@drawable/ic_people"
             app:layout_constraintBottom_toTopOf="@+id/iconLocation"
             app:layout_constraintStart_toStartOf="@+id/textViewPostTitle"
-            app:tint="?android:attr/textColorSecondary" />
+            app:tint="@color/text_secondary" />
 
         <TextView
             android:id="@+id/textViewPostPeople"
@@ -91,7 +91,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:textAppearance="?attr/textAppearanceBody2"
-            android:textColor="?android:attr/textColorSecondary"
+            android:textColor="@color/text_secondary"
             android:textSize="14sp"
             app:layout_constraintBottom_toBottomOf="@+id/iconPeople"
             app:layout_constraintStart_toEndOf="@+id/iconPeople"
@@ -105,7 +105,7 @@
             android:src="@drawable/ic_location"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="@+id/textViewPostTitle"
-            app:tint="?android:attr/textColorSecondary" />
+            app:tint="@color/text_secondary" />
 
         <TextView
             android:id="@+id/textViewPostMeetingPlace"
@@ -115,7 +115,7 @@
             android:ellipsize="end"
             android:maxLines="1"
             android:textAppearance="?attr/textAppearanceBody2"
-            android:textColor="?android:attr/textColorSecondary"
+            android:textColor="@color/text_secondary"
             android:textSize="14sp"
             app:layout_constraintBottom_toBottomOf="@+id/iconLocation"
             app:layout_constraintEnd_toEndOf="parent"
@@ -127,12 +127,46 @@
             android:id="@+id/textViewPostTimestamp"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="?android:attr/textColorSecondary"
+            android:textColor="@color/text_secondary"
             android:textSize="12sp"
             app:layout_constraintBottom_toBottomOf="@+id/textViewPostPeople"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="@+id/textViewPostPeople"
             tools:text="5분 전" />
+
+        <LinearLayout
+            android:id="@+id/layoutCreatorProfile"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="16dp"
+            android:paddingStart="8dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:background="@drawable/background_rounded_border"
+            app:layout_constraintTop_toBottomOf="@+id/iconLocation"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent">
+
+            <ImageView
+                android:id="@+id/imageViewCreatorProfile"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:layout_marginStart="8dp"
+                android:src="@drawable/ic_profile_placeholder"
+                android:contentDescription="작성자 프로필 사진" />
+
+            <TextView
+                android:id="@+id/textViewCreatorNickname"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="작성자 닉네임"
+                android:textStyle="bold"
+                tools:text="acegustjd" />
+        </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
