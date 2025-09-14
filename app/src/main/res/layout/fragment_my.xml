@@ -24,6 +24,7 @@
         android:layout_marginTop="24dp"
         app:cardCornerRadius="16dp"
         app:cardElevation="4dp"
+        app:cardBackgroundColor="@android:color/white"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textViewMyTitle">
@@ -109,8 +110,9 @@
             android:layout_height="100dp"
             android:layout_weight="1"
             app:cardCornerRadius="16dp"
-            app:cardBackgroundColor="?attr/colorSurfaceVariant"
-            app:strokeWidth="0dp"
+            app:strokeColor="@color/divider_gray"
+            app:cardBackgroundColor="@android:color/white"
+            app:strokeWidth="1dp"
             android:layout_marginEnd="8dp">
             <LinearLayout
                 android:layout_width="match_parent"
@@ -135,8 +137,9 @@
             android:layout_height="100dp"
             android:layout_weight="1"
             app:cardCornerRadius="16dp"
-            app:cardBackgroundColor="?attr/colorSurfaceVariant"
-            app:strokeWidth="0dp"
+            app:cardBackgroundColor="@android:color/white"
+            app:strokeColor="@color/divider_gray"
+            app:strokeWidth="1dp"
             android:layout_marginStart="8dp"
             android:layout_marginEnd="8dp">
             <LinearLayout
@@ -163,8 +166,9 @@
             android:layout_height="100dp"
             android:layout_weight="1"
             app:cardCornerRadius="16dp"
-            app:cardBackgroundColor="?attr/colorSurfaceVariant"
-            app:strokeWidth="0dp"
+            app:cardBackgroundColor="@android:color/white"
+            app:strokeColor="@color/divider_gray"
+            app:strokeWidth="1dp"
             android:layout_marginStart="8dp">
             <LinearLayout
                 android:layout_width="match_parent"

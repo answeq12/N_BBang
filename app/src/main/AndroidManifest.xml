@@ -88,6 +88,10 @@
             android:name=".ChatRoomActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".MapDetailActivity"
+            android:exported="false" />
+
         <meta-data
             android:name="com.naver.maps.map.NCP_KEY_ID"
             android:value="t0no2o6lq3" />

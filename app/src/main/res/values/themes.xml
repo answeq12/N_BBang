@@ -31,7 +31,7 @@
 
     <!-- Custom Style for BottomNavigationView -->
     <style name="CustomBottomNavigationView" parent="Widget.Material3.BottomNavigationView">
-        <!-- <item name="itemActiveIndicatorColor">@color/bottom_nav_active_indicator_gray</item> Temporarily Removed -->
+        <item name="simpleItemSelectedColor">@android:color/black</item>
         <item name="itemBackground">@drawable/bottom_nav_item_background_selector</item>
     </style>
 </resources>
