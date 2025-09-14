@@ -60,7 +60,6 @@
             android:text="전송"/>
     </LinearLayout>
 
-    <!-- ✅ 추가된 거래 완료 버튼 -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/button_complete_deal"
         style="@style/Widget.MaterialComponents.Button.TextButton"

@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="fab_yellow_background">#FFC107</color>
     <color name="light_gray_background">#F0F0F0</color>
@@ -13,7 +14,7 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-    <!-- ✅ 추가된 색상 -->
     <color name="green_button">#4CAF50</color>
-    <!-- 활성 아이템 인디케이터 색상 -->
+    <color name="status_recruiting">#4CAF50</color>
+    <color name="text_secondary">#757575</color>
 </resources>

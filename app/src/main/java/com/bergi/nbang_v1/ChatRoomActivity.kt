@@ -38,18 +38,15 @@ class ChatRoomActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_chat_room)
 
-        // UI 요소 초기화
         toolbar = findViewById(R.id.toolbar)
         messageEditText = findViewById(R.id.editText_message)
         sendButton = findViewById(R.id.button_send)
         messagesRecyclerView = findViewById(R.id.recyclerView_messages)
         completeDealButton = findViewById(R.id.button_complete_deal)
 
-        // Intent에서 chatRoomId와 chatRoomTitle 가져오기
         chatRoomId = intent.getStringExtra("chatRoomId")
         val chatRoomTitle = intent.getStringExtra("chatRoomTitle")
 
-        // chatRoomId가 null이 아닐 때만 나머지 로직 실행
         if (chatRoomId != null) {
             setupToolbar(chatRoomTitle)
             setupMessagesRecyclerView()
@@ -64,7 +61,6 @@ class ChatRoomActivity : AppCompatActivity() {
                 completeDeal()
             }
         } else {
-            // chatRoomId가 null이면 액티비티 종료
             Toast.makeText(this, "채팅방 정보를 불러올 수 없습니다.", Toast.LENGTH_SHORT).show()
             finish()
         }
@@ -118,7 +114,6 @@ class ChatRoomActivity : AppCompatActivity() {
             return
         }
 
-        // Firestore에서 현재 사용자의 닉네임 가져오기
         firestore.collection("users").document(currentUser.uid).get()
             .addOnSuccessListener { document ->
                 val senderName = document.getString("nickname") ?: "익명"
@@ -201,39 +196,31 @@ class ChatRoomActivity : AppCompatActivity() {
         chatRoomId?.let { id ->
             val chatRoomRef = firestore.collection("chatRooms").document(id)
 
-            chatRoomRef.get().addOnSuccessListener { documentSnapshot ->
-                val chatRoom = documentSnapshot.toObject(ChatRoom::class.java)
+            firestore.runTransaction { transaction ->
+                val snapshot = transaction.get(chatRoomRef)
+                val chatRoom = snapshot.toObject(ChatRoom::class.java)
+
                 if (chatRoom != null && chatRoom.participants != null) {
                     val participants = chatRoom.participants!!
                     val completingUsers = chatRoom.completingUsers?.toMutableMap() ?: mutableMapOf()
 
                     if (completingUsers.containsKey(currentUserId)) {
-                        Toast.makeText(this, "이미 거래 완료에 동의하셨습니다.", Toast.LENGTH_SHORT).show()
-                        return@addOnSuccessListener
+                        return@runTransaction // 이미 동의했으면 종료
                     }
 
                     completingUsers[currentUserId] = true
 
                     if (completingUsers.size == participants.size) {
-                        chatRoomRef.update(
-                            "completingUsers", completingUsers,
-                            "isCompleted", true
-                        ).addOnSuccessListener {
-                            Toast.makeText(this, "모든 참가자가 동의하여 거래가 완료되었습니다.", Toast.LENGTH_SHORT).show()
-                            isDealCompleted = true
-                            updateCompleteDealButtonState(chatRoom)
-                        }.addOnFailureListener { e ->
-                            Log.e("ChatRoomActivity", "거래 완료 상태 업데이트 실패", e)
-                        }
-                    } else {
-                        chatRoomRef.update("completingUsers", completingUsers)
-                            .addOnSuccessListener {
-                                Toast.makeText(this, "거래 완료에 동의하셨습니다. 다른 참가자의 동의를 기다립니다.", Toast.LENGTH_SHORT).show()
-                            }.addOnFailureListener { e ->
-                                Log.e("ChatRoomActivity", "거래 완료 동의 상태 업데이트 실패", e)
-                            }
+                        transaction.update(chatRoomRef, "isCompleted", true)
                     }
+                    transaction.update(chatRoomRef, "completingUsers", completingUsers)
                 }
+                null
+            }.addOnSuccessListener {
+                Toast.makeText(this, "거래 완료에 동의하셨습니다.", Toast.LENGTH_SHORT).show()
+            }.addOnFailureListener { e ->
+                Log.e("ChatRoomActivity", "거래 완료 트랜잭션 실패", e)
+                Toast.makeText(this, "거래 완료에 실패했습니다.", Toast.LENGTH_SHORT).show()
             }
         }
     }

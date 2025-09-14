@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 탭이 선택되었을 때 -->
+    <item android:drawable="@drawable/tab_selected_background" android:state_selected="true" />
+    <!-- 탭이 선택되지 않았을 때 -->
+    <item android:drawable="@drawable/tab_unselected_background" />
+</selector>
