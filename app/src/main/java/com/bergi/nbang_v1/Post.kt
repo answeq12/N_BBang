@@ -24,5 +24,6 @@ data class Post(
     var meetingLocation: GeoPoint? = null,
     var geohash: String? = null,
     @ServerTimestamp
-    var timestamp: Timestamp? = null
+    var timestamp: Timestamp? = null,
+    val keywords: List<String> = emptyList()
 )

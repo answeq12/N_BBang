@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -9,17 +8,30 @@
     <TextView
         android:id="@+id/textViewUserLocation"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="16dp"
         android:drawableEnd="@drawable/ic_arrow_drop_down"
         android:drawablePadding="8dp"
         android:gravity="center_vertical"
-        android:padding="12dp"
         android:textAppearance="?attr/textAppearanceHeadline6"
+        app:layout_constraintBottom_toBottomOf="@+id/searchView"
         app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/searchView"
+        tools:text="동네" />
+
+    <androidx.appcompat.widget.SearchView
+        android:id="@+id/searchView"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="16dp"
+        android:layout_marginEnd="16dp"
+        android:background="@drawable/gray_box_background"
+        app:iconifiedByDefault="false"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/textViewUserLocation"
         app:layout_constraintTop_toTopOf="parent"
-        tools:text="동네 인증 필요" />
+        app:queryHint="검색 (예: 뿌링클)" />
 
     <LinearLayout
         android:id="@+id/filterContainer"
@@ -31,7 +43,7 @@
         android:paddingEnd="16dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/textViewUserLocation">
+        app:layout_constraintTop_toBottomOf="@id/searchView">
 
         <com.google.android.material.chip.ChipGroup
             android:id="@+id/chipGroupStatus"
@@ -62,62 +74,69 @@
 
         </com.google.android.material.chip.ChipGroup>
 
-        <com.google.android.material.chip.ChipGroup
-            android:id="@+id/chipGroupCategory"
-            android:layout_width="wrap_content"
+        <HorizontalScrollView
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:singleSelection="true">
+            android:scrollbars="none">
 
-            <com.google.android.material.chip.Chip
-                style="@style/Widget.MaterialComponents.Chip.Filter"
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chipGroupCategory"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:checked="true"
-                android:text="전체" />
+                app:singleLine="true"
+                app:singleSelection="true">
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chipCategoryFood"
-                style="@style/Widget.MaterialComponents.Chip.Filter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="음식배달" />
+                <com.google.android.material.chip.Chip
+                    style="@style/Widget.MaterialComponents.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="true"
+                    android:text="전체" />
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chipCategoryPurchase"
-                style="@style/Widget.MaterialComponents.Chip.Filter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="공동구매" />
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipCategoryFood"
+                    style="@style/Widget.MaterialComponents.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="음식배달" />
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chipCategoryErrandWant"
-                style="@style/Widget.MaterialComponents.Chip.Filter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="대리구매 원해요" />
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipCategoryPurchase"
+                    style="@style/Widget.MaterialComponents.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="공동구매" />
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chipCategoryErrandDo"
-                style="@style/Widget.MaterialComponents.Chip.Filter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="대리구매 해드려요" />
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipCategoryErrandWant"
+                    style="@style/Widget.MaterialComponents.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="대리구매 원해요" />
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chipCategoryTaxi"
-                style="@style/Widget.MaterialComponents.Chip.Filter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="택시 합승" />
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipCategoryErrandDo"
+                    style="@style/Widget.MaterialComponents.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="대리구매 해드려요" />
 
-            <com.google.android.material.chip.Chip
-                android:id="@+id/chipCategoryEtc"
-                style="@style/Widget.MaterialComponents.Chip.Filter"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="기타" />
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipCategoryTaxi"
+                    style="@style/Widget.MaterialComponents.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="택시 합승" />
 
-        </com.google.android.material.chip.ChipGroup>
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chipCategoryEtc"
+                    style="@style/Widget.MaterialComponents.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="기타" />
+
+            </com.google.android.material.chip.ChipGroup>
+        </HorizontalScrollView>
 
     </LinearLayout>
 
@@ -125,7 +144,6 @@
         android:id="@+id/sliderGroup"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
         android:paddingBottom="8dp"
         android:visibility="gone"
         app:layout_constraintEnd_toEndOf="parent"
@@ -178,7 +196,38 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/sliderGroup" />
+        app:layout_constraintTop_toBottomOf="@+id/sliderGroup"
+        tools:listitem="@layout/item_post" />
+
+    <FrameLayout
+        android:id="@+id/loadingOrEmptyLayout"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="?android:colorBackground"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/sliderGroup"
+        tools:visibility="visible">
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            style="?android:attr/progressBarStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center" />
+
+        <TextView
+            android:id="@+id/textViewStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginTop="40dp"
+            android:text="게시글을 찾고 있습니다..."
+            android:textAppearance="?attr/textAppearanceBody1" />
+
+    </FrameLayout>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabCreatePost"

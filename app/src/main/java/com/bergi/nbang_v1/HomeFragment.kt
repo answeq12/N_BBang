@@ -6,18 +6,21 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
+import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.appcompat.widget.SearchView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.bergi.nbang_v1.PostAdapter
 import com.bergi.nbang_v1.data.Post
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks
 import com.google.android.material.chip.ChipGroup
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.slider.Slider
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.GeoPoint
@@ -26,15 +29,14 @@ import com.google.firebase.firestore.QuerySnapshot
 import com.google.firebase.ktx.Firebase
 import com.firebase.geofire.GeoFireUtils
 import com.firebase.geofire.GeoLocation
-import com.google.firebase.Timestamp // Firebase Timestamp 클래스 임포트
-import com.google.firebase.firestore.ServerTimestamp
-import java.util.Date
 
 class HomeFragment : Fragment() {
 
     private lateinit var firestore: FirebaseFirestore
     private lateinit var postAdapter: PostAdapter
 
+    // UI 요소
+    private lateinit var searchView: SearchView
     private lateinit var userLocationTextView: TextView
     private lateinit var sliderGroup: ConstraintLayout
     private lateinit var distanceSlider: Slider
@@ -42,11 +44,17 @@ class HomeFragment : Fragment() {
     private lateinit var fabCreatePost: FloatingActionButton
     private lateinit var chipGroupStatus: ChipGroup
     private lateinit var chipGroupCategory: ChipGroup
+    private lateinit var recyclerViewPosts: RecyclerView
+    private lateinit var loadingOrEmptyLayout: FrameLayout
+    private lateinit var progressBar: ProgressBar
+    private lateinit var textViewStatus: TextView
 
+    // 데이터 및 상태
     private var currentUserLocation: GeoPoint? = null
     private var currentRadiusInKm: Double = 5.0
     private var currentFilterStatus: String = "all"
     private var currentFilterCategory: String = "all"
+    private var currentSearchQuery: String? = null
 
     private val TAG = "HomeFragment_DEBUG"
 
@@ -59,19 +67,11 @@ class HomeFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
         firestore = FirebaseFirestore.getInstance()
 
-        val recyclerViewPosts = view.findViewById<RecyclerView>(R.id.recyclerViewPosts)
-        fabCreatePost = view.findViewById<FloatingActionButton>(R.id.fabCreatePost)
-        userLocationTextView = view.findViewById<TextView>(R.id.textViewUserLocation)
-        sliderGroup = view.findViewById<ConstraintLayout>(R.id.sliderGroup)
-        distanceSlider = view.findViewById<Slider>(R.id.distanceSlider)
-        distanceValueTextView = view.findViewById<TextView>(R.id.textViewDistanceValue)
-        chipGroupStatus = view.findViewById<ChipGroup>(R.id.chipGroupStatus)
-        chipGroupCategory = view.findViewById<ChipGroup>(R.id.chipGroupCategory)
-
-        setupRecyclerView(recyclerViewPosts)
+        // UI 요소 초기화
+        initViews(view)
+        setupRecyclerView()
         setupClickListeners()
     }
 
@@ -80,17 +80,51 @@ class HomeFragment : Fragment() {
         loadUserLocationAndThenPosts()
     }
 
-    private fun setupRecyclerView(recyclerView: RecyclerView) {
+    private fun initViews(view: View) {
+        recyclerViewPosts = view.findViewById(R.id.recyclerViewPosts)
+        searchView = view.findViewById(R.id.searchView)
+        fabCreatePost = view.findViewById(R.id.fabCreatePost)
+        userLocationTextView = view.findViewById(R.id.textViewUserLocation)
+        sliderGroup = view.findViewById(R.id.sliderGroup)
+        distanceSlider = view.findViewById(R.id.distanceSlider)
+        distanceValueTextView = view.findViewById(R.id.textViewDistanceValue)
+        chipGroupStatus = view.findViewById(R.id.chipGroupStatus)
+        chipGroupCategory = view.findViewById(R.id.chipGroupCategory)
+        loadingOrEmptyLayout = view.findViewById(R.id.loadingOrEmptyLayout)
+        progressBar = view.findViewById(R.id.progressBar)
+        textViewStatus = view.findViewById(R.id.textViewStatus)
+    }
+
+    private fun setupRecyclerView() {
         postAdapter = PostAdapter(mutableListOf()) { post ->
             val intent = Intent(requireContext(), PostDetailActivity::class.java)
             intent.putExtra("POST_ID", post.id)
             startActivity(intent)
         }
-        recyclerView.layoutManager = LinearLayoutManager(requireContext())
-        recyclerView.adapter = postAdapter
+        recyclerViewPosts.layoutManager = LinearLayoutManager(requireContext())
+        recyclerViewPosts.adapter = postAdapter
     }
 
     private fun setupClickListeners() {
+        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextSubmit(query: String?): Boolean {
+                currentSearchQuery = query?.trim()?.lowercase()
+                loadUserLocationAndThenPosts()
+                searchView.clearFocus()
+                return true
+            }
+
+            override fun onQueryTextChange(newText: String?): Boolean = false
+        })
+
+        val closeButton = searchView.findViewById<View>(androidx.appcompat.R.id.search_close_btn)
+        closeButton.setOnClickListener {
+            currentSearchQuery = null
+            searchView.setQuery("", false)
+            searchView.clearFocus()
+            loadUserLocationAndThenPosts()
+        }
+
         userLocationTextView.setOnClickListener {
             sliderGroup.visibility = if (sliderGroup.visibility == View.VISIBLE) View.GONE else View.VISIBLE
         }
@@ -107,7 +141,7 @@ class HomeFragment : Fragment() {
             }
         })
 
-        val refreshPostsListener: (ChipGroup, List<Int>) -> Unit = { chipGroup, checkedIds ->
+        val refreshPostsListener: (ChipGroup, List<Int>) -> Unit = { _ , _ ->
             currentFilterStatus = when (chipGroupStatus.checkedChipId) {
                 R.id.chipStatusRecruiting -> "모집중"
                 R.id.chipStatusCompleted -> "모집완료"
@@ -122,7 +156,6 @@ class HomeFragment : Fragment() {
                 R.id.chipCategoryEtc -> "기타"
                 else -> "all"
             }
-            Log.d(TAG, "Filter changed - Status: $currentFilterStatus, Category: $currentFilterCategory")
             loadUserLocationAndThenPosts()
         }
 
@@ -135,12 +168,9 @@ class HomeFragment : Fragment() {
     }
 
     private fun loadUserLocationAndThenPosts() {
-        val user = Firebase.auth.currentUser ?: run {
-            Log.w(TAG, "User not logged in. Cannot load posts.")
-            postAdapter.updatePosts(emptyList())
-            userLocationTextView.text = "로그인이 필요합니다."
-            return
-        }
+        val user = Firebase.auth.currentUser ?: return
+
+        showLoading(true, "게시글을 찾고 있습니다...")
 
         firestore.collection("users").document(user.uid).get()
             .addOnSuccessListener { document ->
@@ -149,26 +179,20 @@ class HomeFragment : Fragment() {
                     currentUserLocation = document.getGeoPoint("locationPoint")
                     val dongName = locationName?.split(" ")?.lastOrNull()
 
-                    Log.d(TAG, "User location loaded: Name=$locationName, Point=$currentUserLocation")
-
                     if (!dongName.isNullOrEmpty() && currentUserLocation != null) {
                         userLocationTextView.text = dongName
                         fetchNearbyPosts(currentUserLocation!!, currentRadiusInKm * 1000.0)
                     } else {
-                        Log.w(TAG, "User location (dongName or currentUserLocation) is invalid. Dong: $dongName, LocationPoint: $currentUserLocation")
-                        userLocationTextView.text = "MY 탭에서 동네를 인증해주세요."
-                        postAdapter.updatePosts(emptyList())
+                        userLocationTextView.text = "동네 인증 필요"
+                        showEmptyResults("MY 탭에서 동네를 인증해주세요.")
                     }
                 } else {
-                    Log.w(TAG, "User document does not exist or is null. UID: ${user.uid}")
-                    userLocationTextView.text = "MY 탭에서 동네를 인증해주세요."
-                    postAdapter.updatePosts(emptyList())
+                    userLocationTextView.text = "동네 인증 필요"
+                    showEmptyResults("MY 탭에서 동네를 인증해주세요.")
                 }
             }
-            .addOnFailureListener { e ->
-                Log.e(TAG, "Failed to load user location", e)
-                userLocationTextView.text = "위치 정보 로드 오류"
-                postAdapter.updatePosts(emptyList())
+            .addOnFailureListener {
+                showEmptyResults("사용자 정보를 불러오는 데 실패했습니다.")
             }
     }
 
@@ -177,87 +201,80 @@ class HomeFragment : Fragment() {
         val bounds = GeoFireUtils.getGeoHashQueryBounds(center, radiusInM)
         val tasks = mutableListOf<Task<QuerySnapshot>>()
 
-        Log.d(TAG, "fetchNearbyPosts: Center=$centerPoint, RadiusM=$radiusInM, StatusFilter='$currentFilterStatus', CategoryFilter='$currentFilterCategory'")
-
         for (b in bounds) {
-            var baseQuery: Query = firestore.collection("posts")
+            var q: Query = firestore.collection("posts")
 
             if (currentFilterStatus != "all") {
-                baseQuery = baseQuery.whereEqualTo("status", currentFilterStatus)
+                q = q.whereEqualTo("status", currentFilterStatus)
             }
             if (currentFilterCategory != "all") {
-                baseQuery = baseQuery.whereEqualTo("category", currentFilterCategory)
+                q = q.whereEqualTo("category", currentFilterCategory)
             }
 
-            val q = baseQuery
-                .orderBy("geohash")
-                .startAt(b.startHash)
-                .endAt(b.endHash)
-            tasks.add(q.get())
+            tasks.add(q.orderBy("geohash").startAt(b.startHash).endAt(b.endHash).get())
         }
 
         Tasks.whenAllComplete(tasks)
             .addOnSuccessListener { taskResults ->
-                val matchingPosts = mutableListOf<Post>()
-                var totalDocsProcessed = 0
-
-                for ((index, task) in taskResults.withIndex()) {
+                var matchingPosts = mutableListOf<Post>()
+                for (task in taskResults) {
                     if (task.isSuccessful) {
                         val snap = task.result as QuerySnapshot
-                        totalDocsProcessed += snap.size()
-                        Log.d(TAG, "GeoQuery batch #$index successful, ${snap.size()} documents found.")
-
                         for (doc in snap.documents) {
-                            val postId = doc.id
-                            val postStatus = doc.getString("status")
-                            val postCategory = doc.getString("category")
-                            val postTitle = doc.getString("title")
                             val postGeoPoint = doc.getGeoPoint("meetingLocation")
-
-                            Log.d(TAG, "Processing Post ID: $postId, Title: '$postTitle', Status: '$postStatus', Category: '$postCategory', Location: $postGeoPoint")
-
-                            var skipReason: String? = null
-
-                            if (postGeoPoint == null) {
-                                skipReason = "meetingLocation is null"
-                            } else {
+                            if (postGeoPoint != null) {
                                 val docLocation = GeoLocation(postGeoPoint.latitude, postGeoPoint.longitude)
-                                val distanceInM = GeoFireUtils.getDistanceBetween(docLocation, center)
-                                Log.d(TAG, "Post ID: $postId, Distance: ${String.format("%.2f", distanceInM)}m (Radius: ${radiusInM}m)")
-
-                                if (distanceInM > radiusInM) {
-                                    skipReason = "outside radius (${String.format("%.2f", distanceInM)}m > ${radiusInM}m)"
+                                if (GeoFireUtils.getDistanceBetween(docLocation, center) <= radiusInM) {
+                                    doc.toObject(Post::class.java)?.let {
+                                        it.id = doc.id
+                                        matchingPosts.add(it)
+                                    }
                                 }
                             }
-
-                            if (skipReason != null) {
-                                Log.d(TAG, "Post ID: $postId SKIPPED. Reason: $skipReason. Title: '$postTitle'")
-                                continue
-                            }
-
-                            val post = doc.toObject(Post::class.java)
-                            if (post != null) {
-                                post.id = doc.id
-                                matchingPosts.add(post)
-                                Log.d(TAG, "Post ID: $postId ADDED to list. Title: '${post.title}'")
-                            } else {
-                                Log.w(TAG, "Post ID: $postId FAILED to convert to Post object. Firestore Data: ${doc.data}")
-                            }
                         }
-                    } else {
-                        Log.w(TAG, "GeoQuery batch #$index FAILED.", task.exception)
                     }
                 }
-                Log.d(TAG, "Total documents processed across all GeoQuery batches: $totalDocsProcessed")
 
-                matchingPosts.sortWith(compareByDescending { it.timestamp ?: Timestamp(0,0) })
+                if (!currentSearchQuery.isNullOrEmpty()) {
+                    matchingPosts = matchingPosts.filter { post ->
+                        post.keywords.any { keyword -> keyword.contains(currentSearchQuery!!, ignoreCase = true) } ||
+                                post.title.contains(currentSearchQuery!!, ignoreCase = true)
+                    }.toMutableList()
+                }
 
-                postAdapter.updatePosts(matchingPosts)
-                Log.d(TAG, "UpdatePosts called. Filters(Status:$currentFilterStatus, Cat:$currentFilterCategory), Radius ${radiusInM/1000}km. Found ${matchingPosts.size} posts.")
+                matchingPosts.sortWith(compareByDescending { it.timestamp ?: Timestamp(0, 0) })
+
+                if (matchingPosts.isEmpty()) {
+                    showEmptyResults("검색 결과가 없습니다.")
+                } else {
+                    showLoading(false)
+                    postAdapter.updatePosts(matchingPosts)
+                }
             }
-            .addOnFailureListener { e ->
-                Log.e(TAG, "Failed to fetch nearby posts (overall task failure)", e)
-                postAdapter.updatePosts(emptyList())
+            .addOnFailureListener {
+                showEmptyResults("게시글을 불러오는 데 실패했습니다.")
             }
+    }
+
+    private fun showLoading(isLoading: Boolean, message: String? = null) {
+        if (isLoading) {
+            loadingOrEmptyLayout.visibility = View.VISIBLE
+            progressBar.visibility = View.VISIBLE
+            textViewStatus.visibility = View.VISIBLE
+            textViewStatus.text = message
+            recyclerViewPosts.visibility = View.GONE
+        } else {
+            loadingOrEmptyLayout.visibility = View.GONE
+            recyclerViewPosts.visibility = View.VISIBLE
+        }
+    }
+
+    private fun showEmptyResults(message: String) {
+        loadingOrEmptyLayout.visibility = View.VISIBLE
+        progressBar.visibility = View.GONE
+        textViewStatus.visibility = View.VISIBLE
+        textViewStatus.text = message
+        recyclerViewPosts.visibility = View.GONE
+        postAdapter.updatePosts(emptyList()) // 어댑터의 데이터도 비워줍니다.
     }
 }

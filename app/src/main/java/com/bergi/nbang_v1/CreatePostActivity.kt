@@ -219,6 +219,7 @@ class CreatePostActivity : AppCompatActivity() {
         val category = spinnerCategory.selectedItem.toString()
         val title = editTextTitle.text.toString().trim()
         val content = editTextContent.text.toString().trim()
+        val keywords = title.split(" ").map { it.trim().lowercase() }.filter { it.isNotEmpty() }
         val peopleStr = editTextPeople.text.toString().trim()
         val place = editTextPlace.text.toString().trim()
 
@@ -260,7 +261,8 @@ class CreatePostActivity : AppCompatActivity() {
             meetingLocation = selectedMeetingLocation,
             geohash = newGeohash,
             creatorUid = currentUser.uid,
-            participants = listOf(currentUser.uid)
+            participants = listOf(currentUser.uid),
+            keywords = keywords
         )
 
         firestore.collection("posts")
