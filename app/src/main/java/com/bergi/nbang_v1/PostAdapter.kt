@@ -27,6 +27,7 @@ class PostAdapter(
         private val meetingPlace: TextView = itemView.findViewById(R.id.textViewPostMeetingPlace)
         private val timestamp: TextView = itemView.findViewById(R.id.textViewPostTimestamp)
         private val thumbnailImageView: ImageView = itemView.findViewById(R.id.imageViewThumbnail)
+        private val creatorNickname: TextView = itemView.findViewById(R.id.textViewCreatorNickname)
 
         // bind 함수는 Post 객체 하나를 받아 뷰에 데이터를 채워넣는 역할을 합니다.
         fun bind(post: Post) {
@@ -36,6 +37,7 @@ class PostAdapter(
             people.text = "${post.currentPeople} / ${post.totalPeople}명"
             meetingPlace.text = post.meetingPlaceName
             timestamp.text = formatTimestamp(post.timestamp)
+            creatorNickname.text = post.creatorName
 
             // 사진이 있을 경우에만 썸네일 표시
             if (post.photoUrls.isNotEmpty()) {

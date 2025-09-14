@@ -4,13 +4,11 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginStart="16dp"
-    android:layout_marginTop="8dp"
-    android:layout_marginEnd="16dp"
-    android:layout_marginBottom="8dp"
-    app:cardBackgroundColor="@color/light_gray_background"
+    android:layout_margin="8dp"
     app:cardCornerRadius="8dp"
-    app:cardElevation="4dp">
+    app:cardElevation="0dp"
+    app:strokeColor="@color/fab_yellow_background"
+    app:strokeWidth="1.5dp">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
@@ -19,17 +17,13 @@
 
         <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/imageViewThumbnail"
-            android:layout_width="110dp"
-            android:layout_height="0dp"
+            android:layout_width="100dp"
+            android:layout_height="100dp"
             android:scaleType="centerCrop"
-            android:visibility="gone"
-            app:layout_constraintDimensionRatio="1:1"
-            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Medium"
-            tools:src="@tools:sample/backgrounds/scenic"
-            tools:visibility="visible" />
+            tools:src="@tools:sample/backgrounds/scenic" />
 
         <TextView
             android:id="@+id/textViewPostCategory"
@@ -52,13 +46,13 @@
             android:id="@+id/textViewPostStatus"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textColor="@color/status_recruiting"
             android:textSize="12sp"
             android:textStyle="bold"
             app:layout_constraintBottom_toBottomOf="@+id/textViewPostCategory"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="@+id/textViewPostCategory"
-            tools:text="모집중"
-            android:textColor="@color/status_recruiting" />
+            tools:text="모집중" />
 
         <TextView
             android:id="@+id/textViewPostTitle"
@@ -67,7 +61,6 @@
             android:layout_marginTop="8dp"
             android:ellipsize="end"
             android:maxLines="2"
-            android:minHeight="48dp"
             android:textAppearance="?attr/textAppearanceListItem"
             android:textSize="18sp"
             app:layout_constraintEnd_toEndOf="parent"
@@ -79,10 +72,10 @@
             android:id="@+id/iconPeople"
             android:layout_width="16dp"
             android:layout_height="16dp"
-            android:layout_marginBottom="4dp"
+            android:layout_marginTop="12dp"
             android:src="@drawable/ic_people"
-            app:layout_constraintBottom_toTopOf="@+id/iconLocation"
-            app:layout_constraintStart_toStartOf="@+id/textViewPostTitle"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/imageViewThumbnail"
             app:tint="@color/text_secondary" />
 
         <TextView
@@ -102,9 +95,10 @@
             android:id="@+id/iconLocation"
             android:layout_width="16dp"
             android:layout_height="16dp"
+            android:layout_marginTop="8dp"
             android:src="@drawable/ic_location"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="@+id/textViewPostTitle"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/iconPeople"
             app:tint="@color/text_secondary" />
 
         <TextView
@@ -113,7 +107,6 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:ellipsize="end"
-            android:maxLines="1"
             android:textAppearance="?attr/textAppearanceBody2"
             android:textColor="@color/text_secondary"
             android:textSize="14sp"
@@ -129,43 +122,40 @@
             android:layout_height="wrap_content"
             android:textColor="@color/text_secondary"
             android:textSize="12sp"
-            app:layout_constraintBottom_toBottomOf="@+id/textViewPostPeople"
+            app:layout_constraintBottom_toBottomOf="@+id/layoutCreatorProfile"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="@+id/textViewPostPeople"
+            app:layout_constraintTop_toTopOf="@+id/layoutCreatorProfile"
             tools:text="5분 전" />
 
         <LinearLayout
             android:id="@+id/layoutCreatorProfile"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="8dp"
+            android:gravity="center_vertical|start"
             android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:layout_marginTop="16dp"
-            android:paddingStart="8dp"
-            android:paddingTop="8dp"
-            android:paddingBottom="8dp"
-            android:background="@drawable/background_rounded_border"
-            app:layout_constraintTop_toBottomOf="@+id/iconLocation"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintBottom_toBottomOf="parent">
+            app:layout_constraintEnd_toStartOf="@+id/textViewPostTimestamp"
+            app:layout_constraintStart_toStartOf="@+id/textViewPostTitle"
+            app:layout_constraintTop_toBottomOf="@+id/textViewPostTitle">
 
             <ImageView
                 android:id="@+id/imageViewCreatorProfile"
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:layout_marginStart="8dp"
-                android:src="@drawable/ic_profile_placeholder"
-                android:contentDescription="작성자 프로필 사진" />
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:src="@drawable/ic_profile"
+                app:tint="@color/text_secondary" />
 
             <TextView
                 android:id="@+id/textViewCreatorNickname"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:text="작성자 닉네임"
-                android:textStyle="bold"
-                tools:text="acegustjd" />
+                android:layout_marginStart="4dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp"
+                tools:text="작성자이름이엄청나게길어지면어떻게될까요" />
         </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
