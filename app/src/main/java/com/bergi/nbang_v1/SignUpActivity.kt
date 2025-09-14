@@ -204,7 +204,8 @@ class SignUpActivity : AppCompatActivity() {
                     "email" to user.email,
                     "nickname" to nickname,
                     "phoneNumber" to (user.phoneNumber ?: ""),
-                    "location" to ""
+                    "location" to "",
+                    "mannerScore" to 0.0
                 )
 
                 db.collection("users").document(user.uid).set(userMap)

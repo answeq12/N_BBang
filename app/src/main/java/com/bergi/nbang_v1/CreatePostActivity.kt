@@ -223,8 +223,14 @@ class CreatePostActivity : AppCompatActivity() {
         val peopleStr = editTextPeople.text.toString().trim()
         val place = editTextPlace.text.toString().trim()
 
-        if (title.isEmpty() || content.isEmpty() || peopleStr.isEmpty() || place.isEmpty()) {
-            Toast.makeText(this, "모든 항목을 입력해주세요.", Toast.LENGTH_SHORT).show()
+        if (title.isEmpty() || content.isEmpty() || peopleStr.isEmpty()) {
+            Toast.makeText(this, "제목, 내용, 인원은 필수 항목입니다.", Toast.LENGTH_SHORT).show()
+            createButton.isEnabled = true
+            return
+        }
+
+        if (selectedMeetingLocation == null) {
+            Toast.makeText(this, "만날 장소를 선택해주세요.", Toast.LENGTH_SHORT).show()
             createButton.isEnabled = true
             return
         }

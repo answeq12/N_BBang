@@ -37,8 +37,12 @@ class MyFragment : Fragment() {
 
         // 프로필 카드를 클릭했을 때의 동작
         profileCard.setOnClickListener {
-            (activity as? MainActivity)?.navigateToProfileFragment()
+            val intent = Intent(requireContext(), UserProfileActivity::class.java)
+            intent.putExtra("USER_ID", user?.uid)
+            startActivity(intent)
+            activity?.overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
         }
+
 
         // '내 활동' 카드를 클릭했을 때의 동작
         myActivitiesCard.setOnClickListener {

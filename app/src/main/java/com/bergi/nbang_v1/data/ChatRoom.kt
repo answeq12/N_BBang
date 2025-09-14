@@ -18,5 +18,6 @@ data class ChatRoom(
     // ✅ 추가된 필드
     var status: String? = "모집중", // 모집 상태 ("모집중", "모집완료")
     var isCompleted: Boolean = false,
-    var completingUsers: Map<String, Boolean>? = null
+    var completingUsers: Map<String, Boolean>? = null,
+    var usersWhoLiked: List<String>? = null
 )

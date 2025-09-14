@@ -3,27 +3,31 @@ package com.bergi.nbang_v1
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
-import android.view.LayoutInflater // ✅ 추가: LayoutInflater 임포트
-import android.view.View
+import android.view.Menu
+import android.view.MenuItem
+import android.view.View // <<< 여기를 추가했습니다!
 import android.widget.Button
 import android.widget.EditText
-import android.widget.ImageView
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog // ✅ 추가: AlertDialog 임포트
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.GravityCompat
+import androidx.drawerlayout.widget.DrawerLayout
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bergi.nbang_v1.adapter.MessageAdapter
-import com.bergi.nbang_v1.adapter.ParticipantsAdapter // ✅ 추가: ParticipantsAdapter 임포트
+import com.bergi.nbang_v1.adapter.ParticipantAdapter
 import com.bergi.nbang_v1.data.ChatRoom
 import com.bergi.nbang_v1.data.Message
+import com.bergi.nbang_v1.data.Participant
+import com.google.android.gms.tasks.Tasks
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.ktx.Firebase
-import java.util.Arrays
 
 class ChatRoomActivity : AppCompatActivity() {
 
@@ -33,25 +37,20 @@ class ChatRoomActivity : AppCompatActivity() {
     private lateinit var messagesRecyclerView: RecyclerView
     private lateinit var messageAdapter: MessageAdapter
     private lateinit var completeDealButton: Button
-    private lateinit var menuButton: ImageView
+    private lateinit var drawerLayout: DrawerLayout
+    private lateinit var participantsRecyclerView: RecyclerView
 
     private val firestore = FirebaseFirestore.getInstance()
     private val auth = Firebase.auth
 
     private var chatRoomId: String? = null
-    private var isDealCompleted = false
-    private var chatRoom: ChatRoom? = null
+    private var currentChatRoom: ChatRoom? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_chat_room)
 
-        toolbar = findViewById(R.id.toolbar)
-        messageEditText = findViewById(R.id.editText_message)
-        sendButton = findViewById(R.id.button_send)
-        messagesRecyclerView = findViewById(R.id.recyclerView_messages)
-        completeDealButton = findViewById(R.id.button_complete_deal)
-        menuButton = findViewById(R.id.menuButton)
+        initViews()
 
         chatRoomId = intent.getStringExtra("chatRoomId")
         val chatRoomTitle = intent.getStringExtra("chatRoomTitle")
@@ -62,34 +61,46 @@ class ChatRoomActivity : AppCompatActivity() {
             loadMessages()
             loadChatRoomInfo()
 
-            sendButton.setOnClickListener {
-                sendMessage()
-            }
-
-            completeDealButton.setOnClickListener {
-                completeDeal()
-            }
-
-            menuButton.setOnClickListener {
-                showChatRoomMenu()
-            }
+            sendButton.setOnClickListener { sendMessage() }
+            completeDealButton.setOnClickListener { completeDeal() }
         } else {
             Toast.makeText(this, "채팅방 정보를 불러올 수 없습니다.", Toast.LENGTH_SHORT).show()
             finish()
         }
     }
 
+    private fun initViews() {
+        toolbar = findViewById(R.id.toolbar)
+        messageEditText = findViewById(R.id.editText_message)
+        sendButton = findViewById(R.id.button_send)
+        messagesRecyclerView = findViewById(R.id.recyclerView_messages)
+        completeDealButton = findViewById(R.id.button_complete_deal)
+        drawerLayout = findViewById(R.id.drawer_layout)
+        participantsRecyclerView = findViewById(R.id.recyclerView_participants)
+    }
+
     private fun setupToolbar(title: String?) {
         toolbar.title = title ?: "채팅방"
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+    }
 
-        chatRoomId?.let { id ->
-            firestore.collection("chatRooms").document(id).get()
-                .addOnSuccessListener { document ->
-                    val participants = document.get("participants") as? List<*>
-                    toolbar.subtitle = "참여자: ${participants?.size ?: 0}명"
-                }
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.menu_chatroom, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            android.R.id.home -> {
+                finish()
+                true
+            }
+            R.id.action_view_participants -> {
+                drawerLayout.openDrawer(GravityCompat.END)
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
         }
     }
 
@@ -123,14 +134,11 @@ class ChatRoomActivity : AppCompatActivity() {
     private fun sendMessage() {
         val messageText = messageEditText.text.toString().trim()
         val currentUser = auth.currentUser
-        if (messageText.isEmpty() || currentUser == null || chatRoomId == null) {
-            return
-        }
+        if (messageText.isEmpty() || currentUser == null || chatRoomId == null) return
 
         firestore.collection("users").document(currentUser.uid).get()
             .addOnSuccessListener { document ->
                 val senderName = document.getString("nickname") ?: "익명"
-
                 val message = Message(
                     senderUid = currentUser.uid,
                     senderName = senderName,
@@ -141,28 +149,19 @@ class ChatRoomActivity : AppCompatActivity() {
                 firestore.collection("chatRooms").document(chatRoomId!!)
                     .collection("messages").add(message)
                     .addOnSuccessListener {
-                        Log.d("ChatRoomActivity", "메시지 전송 성공")
                         messageEditText.text.clear()
                         updateLastMessage(messageText)
                     }
                     .addOnFailureListener { e ->
-                        Log.w("ChatRoomActivity", "메시지 전송 실패", e)
                         Toast.makeText(this, "메시지 전송에 실패했습니다.", Toast.LENGTH_SHORT).show()
                     }
-            }
-            .addOnFailureListener { e ->
-                Log.w("ChatRoomActivity", "사용자 정보 조회 실패", e)
-                Toast.makeText(this, "메시지 전송에 실패했습니다.", Toast.LENGTH_SHORT).show()
             }
     }
 
     private fun updateLastMessage(message: String) {
         chatRoomId?.let {
             firestore.collection("chatRooms").document(it)
-                .update(mapOf(
-                    "lastMessage" to message,
-                    "lastMessageTimestamp" to Timestamp.now()
-                ))
+                .update("lastMessage", message, "lastMessageTimestamp", Timestamp.now())
         }
     }
 
@@ -176,20 +175,110 @@ class ChatRoomActivity : AppCompatActivity() {
                     }
 
                     if (documentSnapshot != null && documentSnapshot.exists()) {
-                        chatRoom = documentSnapshot.toObject(ChatRoom::class.java)
-                        if (chatRoom != null) {
-                            isDealCompleted = chatRoom!!.isCompleted
-                            if (chatRoom!!.status == "모집완료") {
-                                completeDealButton.visibility = View.VISIBLE
-                            } else {
-                                completeDealButton.visibility = View.GONE
-                            }
-                            updateCompleteDealButtonState(chatRoom!!)
+                        currentChatRoom = documentSnapshot.toObject(ChatRoom::class.java)
+                        currentChatRoom?.let {
+                            toolbar.subtitle = "참여자: ${it.participants?.size ?: 0}명"
+                            updateCompleteDealButtonState(it)
+                            setupParticipantsList(it)
                         }
                     }
                 }
         }
     }
+
+    private fun setupParticipantsList(chatRoom: ChatRoom) {
+        val participantUids = chatRoom.participants ?: return
+        val creatorUid = chatRoom.creatorUid
+
+        val userFetchTasks = participantUids.map { firestore.collection("users").document(it).get() }
+
+        Tasks.whenAllSuccess<DocumentSnapshot>(userFetchTasks).addOnSuccessListener { documents ->
+            val participants = documents.mapNotNull {
+                val uid = it.id
+                val nickname = it.getString("nickname") ?: "알 수 없는 사용자"
+                Participant(uid, nickname, uid == creatorUid)
+            }
+
+            val sortedParticipants = participants.sortedWith(
+                compareByDescending<Participant> { it.isCreator }.thenBy { it.nickname }
+            )
+
+            val adapter = ParticipantAdapter(sortedParticipants) { participant ->
+                showParticipantOptions(participant)
+            }
+            participantsRecyclerView.layoutManager = LinearLayoutManager(this)
+            participantsRecyclerView.adapter = adapter
+        }.addOnFailureListener {
+            Log.e("ChatRoomActivity", "Failed to fetch all participant details", it)
+        }
+    }
+
+    private fun showParticipantOptions(participant: Participant) {
+        val options = mutableListOf("프로필 보기")
+
+        // Add Like, Report, and Review options based on conditions
+        if (participant.uid != auth.currentUser?.uid) {
+            if (currentChatRoom?.isCompleted == true) {
+                options.add("좋아요")
+                options.add("후기 남기기")
+            }
+            options.add("신고하기")
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle(participant.nickname)
+            .setItems(options.toTypedArray()) { _, which ->
+                when (val selection = options[which]) {
+                    "프로필 보기" -> {
+                        val intent = Intent(this, UserProfileActivity::class.java)
+                        intent.putExtra("USER_ID", participant.uid)
+                        startActivity(intent)
+                    }
+                    "좋아요" -> {
+                        likeParticipant(participant)
+                    }
+                    "후기 남기기" -> {
+                        Toast.makeText(this, "후기 남기기 기능은 구현 예정입니다.", Toast.LENGTH_SHORT).show()
+                    }
+                    "신고하기" -> {
+                        Toast.makeText(this, "신고하기 기능은 구현 예정입니다.", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            .show()
+    }
+
+    private fun likeParticipant(targetUser: Participant) {
+        val likerId = auth.currentUser?.uid
+        if (likerId == null || chatRoomId == null) return
+
+        val chatRoomRef = firestore.collection("chatRooms").document(chatRoomId!!)
+        val targetUserRef = firestore.collection("users").document(targetUser.uid)
+
+        firestore.runTransaction { transaction ->
+            val chatRoomSnapshot = transaction.get(chatRoomRef)
+            val chatRoom = chatRoomSnapshot.toObject(ChatRoom::class.java)
+
+            val usersWhoLiked = chatRoom?.usersWhoLiked ?: emptyList()
+            if (usersWhoLiked.contains(likerId)) {
+                // Throw an exception to abort the transaction and jump to onFailure
+                throw Exception("이미 이 채팅방에서 좋아요를 눌렀습니다.")
+            }
+
+            // Proceed with liking
+            transaction.update(targetUserRef, "mannerScore", com.google.firebase.firestore.FieldValue.increment(0.5))
+            transaction.update(chatRoomRef, "usersWhoLiked", com.google.firebase.firestore.FieldValue.arrayUnion(likerId))
+
+            null // Transaction must return null
+        }.addOnSuccessListener {
+            Toast.makeText(this, "${targetUser.nickname}님에게 좋아요를 보냈습니다!", Toast.LENGTH_SHORT).show()
+        }.addOnFailureListener { e ->
+            // The exception message from the transaction is caught here
+            Toast.makeText(this, e.message ?: "좋아요 처리에 실패했습니다.", Toast.LENGTH_SHORT).show()
+            Log.w("ChatRoomActivity", "Like transaction failed.", e)
+        }
+    }
+
 
     private fun updateCompleteDealButtonState(chatRoom: ChatRoom) {
         if (chatRoom.isCompleted) {
@@ -197,21 +286,17 @@ class ChatRoomActivity : AppCompatActivity() {
             return
         }
 
-        if (chatRoom.status == "모집완료") {
-            completeDealButton.visibility = View.VISIBLE
-            val currentUserId = auth.currentUser?.uid
-            val completingUsers = chatRoom.completingUsers ?: emptyMap()
+        val currentUserId = auth.currentUser?.uid
+        val completingUsers = chatRoom.completingUsers ?: emptyMap()
 
-            if (currentUserId != null && completingUsers.containsKey(currentUserId)) {
-                completeDealButton.text = "거래 완료 동의함"
-                completeDealButton.isEnabled = false
-            } else {
-                completeDealButton.text = "거래 완료"
-                completeDealButton.isEnabled = true
-            }
+        if (currentUserId != null && completingUsers.containsKey(currentUserId)) {
+            completeDealButton.text = "거래 완료 동의함"
+            completeDealButton.isEnabled = false
         } else {
-            completeDealButton.visibility = View.GONE
+            completeDealButton.text = "거래 완료"
+            completeDealButton.isEnabled = true
         }
+        completeDealButton.visibility = View.VISIBLE
     }
 
     private fun completeDeal() {
@@ -222,73 +307,23 @@ class ChatRoomActivity : AppCompatActivity() {
             firestore.runTransaction { transaction ->
                 val snapshot = transaction.get(chatRoomRef)
                 val chatRoom = snapshot.toObject(ChatRoom::class.java)
-
-                if (chatRoom != null && chatRoom.participants != null) {
+                if (chatRoom?.participants != null) {
                     val participants = chatRoom.participants!!
                     val completingUsers = chatRoom.completingUsers?.toMutableMap() ?: mutableMapOf()
 
-                    if (completingUsers.containsKey(currentUserId)) {
-                        return@runTransaction
+                    if (!completingUsers.containsKey(currentUserId)) {
+                        completingUsers[currentUserId] = true
+                        if (completingUsers.size == participants.size) {
+                            transaction.update(chatRoomRef, "isCompleted", true)
+                        }
+                        transaction.update(chatRoomRef, "completingUsers", completingUsers)
                     }
-
-                    completingUsers[currentUserId] = true
-
-                    if (completingUsers.size == participants.size) {
-                        transaction.update(chatRoomRef, "isCompleted", true)
-                    }
-                    transaction.update(chatRoomRef, "completingUsers", completingUsers)
                 }
-                null
             }.addOnSuccessListener {
                 Toast.makeText(this, "거래 완료에 동의하셨습니다.", Toast.LENGTH_SHORT).show()
             }.addOnFailureListener { e ->
                 Log.e("ChatRoomActivity", "거래 완료 트랜잭션 실패", e)
-                Toast.makeText(this, "거래 완료에 실패했습니다.", Toast.LENGTH_SHORT).show()
             }
         }
-    }
-
-    private fun showChatRoomMenu() {
-        if (chatRoom == null) {
-            Toast.makeText(this, "채팅방 정보를 불러오는 중입니다.", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_chatroom_menu, null)
-        val dialogBuilder = AlertDialog.Builder(this)
-            .setView(dialogView)
-
-        val dialog = dialogBuilder.create()
-        dialog.show()
-
-        val participantsRecyclerView: RecyclerView = dialogView.findViewById(R.id.recyclerViewParticipants)
-        val completeDealButton: Button = dialogView.findViewById(R.id.buttonCompleteDeal)
-
-        if (!chatRoom!!.participants.isNullOrEmpty()) {
-            val participantsAdapter = ParticipantsAdapter(chatRoom!!.participants!!)
-            participantsRecyclerView.layoutManager = LinearLayoutManager(this)
-            participantsRecyclerView.adapter = participantsAdapter
-        }
-
-        if (auth.currentUser?.uid == chatRoom!!.creatorUid) {
-            completeDealButton.visibility = View.VISIBLE
-            completeDealButton.setOnClickListener {
-                firestore.collection("posts").document(chatRoom!!.postId!!).update("status", "모집완료")
-                    .addOnSuccessListener {
-                        Toast.makeText(this, "게시글이 모집 완료되었습니다.", Toast.LENGTH_SHORT).show()
-                        dialog.dismiss()
-                    }
-                    .addOnFailureListener {
-                        Toast.makeText(this, "모집 완료 처리에 실패했습니다.", Toast.LENGTH_SHORT).show()
-                    }
-            }
-        } else {
-            completeDealButton.visibility = View.GONE
-        }
-    }
-
-    override fun onSupportNavigateUp(): Boolean {
-        finish()
-        return true
     }
 }

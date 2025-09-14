@@ -117,38 +117,30 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/editTextTotalPeople" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/buttonSelectPlace"
-            style="@style/GrayContainedButton"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="장소 선택 (지도)"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/textViewLabelPlace" />
-
         <EditText
             android:id="@+id/editTextMeetingPlace"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:background="@drawable/gray_box_background"
-            android:hint="만날 장소 직접 입력 또는 지도에서 선택"
-            android:inputType="text"
+            android:clickable="false"
+            android:drawableEnd="@drawable/ic_location"
+            android:drawablePadding="12dp"
+            android:focusable="false"
+            android:hint="아래 버튼을 눌러 장소를 선택하세요"
             android:minHeight="48dp"
             android:padding="12dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/buttonSelectPlace" />
+            app:layout_constraintTop_toBottomOf="@+id/textViewLabelPlace" />
 
-        <TextView
-            android:id="@+id/textViewSelectedPlace"
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonSelectPlace"
+            style="@style/GrayContainedButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="선택된 장소가 없습니다."
-            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:text="지도에서 장소 선택"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/editTextMeetingPlace" />
@@ -163,7 +155,7 @@
             android:text="사진 선택"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/textViewSelectedPlace" />
+            app:layout_constraintTop_toBottomOf="@+id/buttonSelectPlace" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/buttonCreatePost"
