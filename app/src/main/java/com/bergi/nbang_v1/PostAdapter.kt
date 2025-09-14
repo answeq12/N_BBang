@@ -3,10 +3,13 @@ package com.bergi.nbang_v1
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageView // ImageView import
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide // Glide import
+import com.bergi.nbang_v1.R
+import com.bergi.nbang_v1.data.Post
+import com.bumptech.glide.Glide
+import com.google.firebase.Timestamp // Timestamp import
 import java.util.Date
 
 // RecyclerView.Adapter를 상속받아 Post 데이터를 처리하는 어댑터입니다.
@@ -16,7 +19,6 @@ class PostAdapter(
 ) : RecyclerView.Adapter<PostAdapter.PostViewHolder>() {
 
     // ViewHolder는 item_post.xml 레이아웃 내부의 뷰들을 보관하는 객체입니다.
-    // 이 객체를 통해 각 뷰에 데이터를 설정합니다.
     inner class PostViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val category: TextView = itemView.findViewById(R.id.textViewPostCategory)
         private val status: TextView = itemView.findViewById(R.id.textViewPostStatus)
@@ -24,7 +26,7 @@ class PostAdapter(
         private val people: TextView = itemView.findViewById(R.id.textViewPostPeople)
         private val meetingPlace: TextView = itemView.findViewById(R.id.textViewPostMeetingPlace)
         private val timestamp: TextView = itemView.findViewById(R.id.textViewPostTimestamp)
-        private val thumbnailImageView: ImageView = itemView.findViewById(R.id.imageViewThumbnail) // 썸네일 ImageView 연결
+        private val thumbnailImageView: ImageView = itemView.findViewById(R.id.imageViewThumbnail)
 
         // bind 함수는 Post 객체 하나를 받아 뷰에 데이터를 채워넣는 역할을 합니다.
         fun bind(post: Post) {
@@ -58,7 +60,6 @@ class PostAdapter(
     }
 
     // ViewHolder가 처음 생성될 때 호출됩니다.
-    // item_post.xml 레이아웃을 inflate(실제 뷰 객체로 만듦)하여 ViewHolder를 생성합니다.
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): PostViewHolder {
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.item_post, parent, false)
@@ -79,7 +80,7 @@ class PostAdapter(
     fun updatePosts(newPosts: List<Post>) {
         posts.clear()
         posts.addAll(newPosts)
-        notifyDataSetChanged() // 데이터가 변경되었음을 어댑터에 알려 화면을 새로 그리게 합니다.
+        notifyDataSetChanged()
     }
 
     // Firebase의 Timestamp를 "n분 전", "n시간 전"과 같은 상대 시간으로 변환하는 함수입니다.

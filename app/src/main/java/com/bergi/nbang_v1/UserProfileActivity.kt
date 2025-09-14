@@ -8,8 +8,11 @@ import android.widget.TextView
 import androidx.appcompat.widget.Toolbar
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.bergi.nbang_v1.PostAdapter
+import com.bergi.nbang_v1.data.Post // ✅ Post 데이터 클래스 임포트
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
+import com.google.firebase.ktx.Firebase
 
 class UserProfileActivity : BaseActivity() {
 
@@ -45,9 +48,7 @@ class UserProfileActivity : BaseActivity() {
         firestore.collection("users").document(userId!!).get()
             .addOnSuccessListener { document ->
                 if (document != null && document.exists()) {
-                    // --- User.kt 없이 직접 데이터를 가져옵니다 ---
                     val nickname = document.getString("nickname") ?: "알 수 없는 사용자"
-                    // Firestore는 숫자를 Long으로 저장하므로, Long으로 받고 Int로 변환합니다.
                     val mannerScore = document.getLong("mannerScore")?.toInt() ?: 36
 
                     nicknameTextView.text = nickname

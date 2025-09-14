@@ -1,11 +1,17 @@
-package com.bergi.nbang_v1.data // 본인의 패키지 이름으로 변경
+package com.bergi.nbang_v1.data
 
-import java.util.Date
+import com.google.firebase.Timestamp
+import com.google.firebase.firestore.ServerTimestamp
 
 data class ChatRoom(
-    val dealId: String = "",
-    val dealTitle: String = "",
-    val participants: List<String> = listOf(),
-    val lastMessage: String = "채팅방이 생성되었습니다.",
-    val lastMessageTimestamp: Date = Date()
+    var postId: String? = null,
+    var postTitle: String? = null,
+    var creatorUid: String? = null, // 게시글 작성자 UID 필드 추가
+    var participants: List<String>? = null,
+    var lastMessage: String? = null,
+    @ServerTimestamp
+    var lastMessageTimestamp: Timestamp? = null,
+    @ServerTimestamp
+    var createdAt: Timestamp? = null, // 채팅방 생성 시간 필드 추가
+    var unreadCount: Int = 0
 )

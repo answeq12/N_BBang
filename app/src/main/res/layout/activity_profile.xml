@@ -92,8 +92,9 @@
         app:layout_constraintTop_toTopOf="@+id/textViewProfilePhone" />
 
     <!-- 정보 수정 버튼 -->
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/buttonEditProfile"
+        style = "@style/GrayContainedButton"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"

@@ -31,7 +31,6 @@
         app:layout_constraintEnd_toEndOf="parent">
 
         <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/textInputLayoutKeyword"
             style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -51,6 +50,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
+            android:backgroundTint="@color/divider_gray"
+            android:textColor = "@android:color/white"
             android:text="추가"
             android:layout_gravity="center_vertical"
             android:minHeight="56dp"/>
@@ -81,6 +82,7 @@
 
         <com.google.android.material.slider.Slider
             android:id="@+id/sliderNotificationRadius"
+            style="@style/YellowSlider"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"

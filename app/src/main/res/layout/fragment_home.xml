@@ -40,7 +40,6 @@
             app:singleSelection="true">
 
             <com.google.android.material.chip.Chip
-                android:id="@+id/chipStatusAll"
                 style="@style/Widget.MaterialComponents.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -70,7 +69,6 @@
             app:singleSelection="true">
 
             <com.google.android.material.chip.Chip
-                android:id="@+id/chipCategoryAll"
                 style="@style/Widget.MaterialComponents.Chip.Filter"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -147,6 +145,7 @@
 
         <com.google.android.material.slider.Slider
             android:id="@+id/distanceSlider"
+            style="@style/YellowSlider"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="16dp"
@@ -188,8 +187,9 @@
         android:layout_margin="16dp"
         android:contentDescription="새 게시글 작성"
         android:src="@drawable/ic_add"
+        app:backgroundTint="@color/fab_yellow_background"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:tint="?attr/colorOnPrimaryContainer" />
+        app:tint="@android:color/white" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

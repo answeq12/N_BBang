@@ -1,7 +1,8 @@
 package com.bergi.nbang_v1
 
+import com.bergi.nbang_v1.data.Post
 import android.Manifest
-import android.app.Activity // Activity 임포트 추가
+import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -11,20 +12,22 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.Spinner
 import android.widget.Toast
-import androidx.activity.result.ActivityResultLauncher // ActivityResultLauncher 임포트 추가
+import androidx.activity.result.ActivityResultLauncher
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.GeoPoint // GeoPoint 임포트 추가
+import com.google.firebase.firestore.GeoPoint
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.ktx.storage
 import androidx.activity.result.contract.ActivityResultContracts
-import com.firebase.geofire.GeoFireUtils // GeoFire 유틸리티 추가
-import com.firebase.geofire.GeoLocation   // GeoFire 유틸리티 추가
-import java.io.InputStream
+import com.firebase.geofire.GeoFireUtils
+import com.firebase.geofire.GeoLocation
+import com.google.firebase.firestore.FieldValue
+// InputStream은 uploadPhotos 함수 내에서만 사용되므로 여기서는 제거해도 무방.
+// import java.io.InputStream
 import java.util.UUID
 
 class CreatePostActivity : AppCompatActivity() {
@@ -37,14 +40,14 @@ class CreatePostActivity : AppCompatActivity() {
     private lateinit var editTextTitle: EditText
     private lateinit var editTextContent: EditText
     private lateinit var editTextPeople: EditText
-    private lateinit var editTextPlace: EditText // 사용자가 직접 입력하거나 지도에서 선택한 장소 이름
+    private lateinit var editTextPlace: EditText
     private lateinit var createButton: Button
     private lateinit var selectPhotoButton: Button
-    private lateinit var buttonSelectPlace: Button // 지도에서 장소 선택 버튼
+    private lateinit var buttonSelectPlace: Button
 
     private val TAG = "CreatePostActivity"
     private val selectedPhotos = mutableListOf<Uri>()
-    private var selectedMeetingLocation: GeoPoint? = null // 지도에서 선택된 좌표
+    private var selectedMeetingLocation: GeoPoint? = null
 
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted: Boolean ->
@@ -71,7 +74,6 @@ class CreatePostActivity : AppCompatActivity() {
             }
         }
 
-    // SearchAddressActivity 결과를 처리하기 위한 ActivityResultLauncher
     private val searchAddressLauncher: ActivityResultLauncher<Intent> =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
@@ -161,34 +163,34 @@ class CreatePostActivity : AppCompatActivity() {
     private fun uploadPhotos() {
         createButton.isEnabled = false
         val uploadTasks = selectedPhotos.mapNotNull { uri ->
-            var inputStream: InputStream? = null
             try {
-                inputStream = contentResolver.openInputStream(uri)
-                if (inputStream != null) {
+                // contentResolver.openInputStream(uri)가 null을 반환할 수 있으므로,
+                // 이를 안전 호출(.?)과 let 스코프 함수로 처리합니다.
+                contentResolver.openInputStream(uri)?.let { inputStream -> // inputStream이 null이 아닐 때만 실행
                     val photoRef = storage.reference.child("images/${UUID.randomUUID()}.jpg")
                     photoRef.putStream(inputStream).continueWithTask { task ->
+                        // inputStream은 여기서 닫지 않습니다. Firebase SDK가 관리합니다.
                         if (!task.isSuccessful) {
                             task.exception?.let { throw it }
                         }
                         photoRef.downloadUrl
                     }
-                } else {
-                    null
-                }
-            } finally {
-                inputStream?.close()
+                } // inputStream이 null이면 mapNotNull에 의해 null이 반환되어 걸러집니다.
+            } catch (e: Exception) {
+                Log.e(TAG, "Error preparing upload for URI: $uri", e)
+                null // 오류 발생 시 null을 반환하여 이 URI는 업로드 목록에서 제외
             }
         }
 
         if (uploadTasks.isEmpty() && selectedPhotos.isNotEmpty()) {
-            Log.w(TAG, "Failed to open input stream for some or all photos.")
-            Toast.makeText(this, "일부 사진을 처리하는데 실패했습니다. 다시 시도해주세요.", Toast.LENGTH_LONG).show()
+            Log.w(TAG, "Failed to prepare any photos for upload or all input streams were null.")
+            Toast.makeText(this, "사진을 업로드 준비하는데 실패했습니다. 다시 시도해주세요.", Toast.LENGTH_LONG).show()
             createButton.isEnabled = true
             return
         }
 
         if (uploadTasks.isEmpty() && selectedPhotos.isEmpty()) {
-            createPost(emptyList())
+            createPost(emptyList()) // 업로드할 사진이 애초에 없었던 경우
             return
         }
 
@@ -234,7 +236,6 @@ class CreatePostActivity : AppCompatActivity() {
             return
         }
 
-        // GeoHash 계산 로직 추가
         var newGeohash: String? = null
         if (selectedMeetingLocation != null) {
             try {
@@ -257,7 +258,7 @@ class CreatePostActivity : AppCompatActivity() {
             totalPeople = totalPeople,
             meetingPlaceName = place,
             meetingLocation = selectedMeetingLocation,
-            geohash = newGeohash, // 계산된 geohash 저장
+            geohash = newGeohash,
             creatorUid = currentUser.uid,
             participants = listOf(currentUser.uid)
         )
@@ -265,11 +266,33 @@ class CreatePostActivity : AppCompatActivity() {
         firestore.collection("posts")
             .add(newPost)
             .addOnSuccessListener { documentReference ->
-                Log.d(TAG, "Post uploaded successfully: ${documentReference.id}. Geohash: $newGeohash")
+                val postId = documentReference.id
+                Log.d(TAG, "Post uploaded successfully: $postId. Geohash: $newGeohash")
                 Toast.makeText(this, "게시글이 등록되었습니다.", Toast.LENGTH_SHORT).show()
 
+                // 채팅방 생성 로직
+                // ChatRoom 데이터 클래스에 맞게 수정
+                val chatRoomData = hashMapOf(
+                    "postId" to postId,
+                    "postTitle" to newPost.title,
+                    "creatorUid" to currentUser.uid,
+                    "participants" to listOf(currentUser.uid),
+                    "createdAt" to FieldValue.serverTimestamp(),
+                    "lastMessageTimestamp" to FieldValue.serverTimestamp(),
+                    "lastMessage" to "" // "lastMessageText"를 "lastMessage"로 변경
+                )
+
+                firestore.collection("chatRooms").document(postId)
+                    .set(chatRoomData)
+                    .addOnSuccessListener {
+                        Log.d(TAG, "Chat room created successfully for post ID: $postId")
+                    }
+                    .addOnFailureListener { e ->
+                        Log.w(TAG, "Error creating chat room for post ID: $postId", e)
+                    }
+
                 val intent = Intent(this, PostDetailActivity::class.java)
-                intent.putExtra("POST_ID", documentReference.id)
+                intent.putExtra("POST_ID", postId)
                 startActivity(intent)
                 finish()
             }

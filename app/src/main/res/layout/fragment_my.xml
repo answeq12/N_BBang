@@ -24,6 +24,7 @@
         android:layout_marginTop="24dp"
         app:cardCornerRadius="16dp"
         app:cardElevation="4dp"
+        app:cardBackgroundColor="@android:color/white"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textViewMyTitle">
@@ -94,7 +95,6 @@
 
     <!-- 중간 버튼 메뉴 -->
     <LinearLayout
-        android:id="@+id/linearLayoutButtons"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
@@ -110,8 +110,9 @@
             android:layout_height="100dp"
             android:layout_weight="1"
             app:cardCornerRadius="16dp"
-            app:cardBackgroundColor="?attr/colorSurfaceVariant"
-            app:strokeWidth="0dp"
+            app:strokeColor="@color/divider_gray"
+            app:cardBackgroundColor="@android:color/white"
+            app:strokeWidth="1dp"
             android:layout_marginEnd="8dp">
             <LinearLayout
                 android:layout_width="match_parent"
@@ -132,13 +133,13 @@
 
         <!-- 후기 작성 버튼 -->
         <com.google.android.material.card.MaterialCardView
-            android:id="@+id/cardWriteReview"
             android:layout_width="0dp"
             android:layout_height="100dp"
             android:layout_weight="1"
             app:cardCornerRadius="16dp"
-            app:cardBackgroundColor="?attr/colorSurfaceVariant"
-            app:strokeWidth="0dp"
+            app:cardBackgroundColor="@android:color/white"
+            app:strokeColor="@color/divider_gray"
+            app:strokeWidth="1dp"
             android:layout_marginStart="8dp"
             android:layout_marginEnd="8dp">
             <LinearLayout
@@ -165,8 +166,9 @@
             android:layout_height="100dp"
             android:layout_weight="1"
             app:cardCornerRadius="16dp"
-            app:cardBackgroundColor="?attr/colorSurfaceVariant"
-            app:strokeWidth="0dp"
+            app:cardBackgroundColor="@android:color/white"
+            app:strokeColor="@color/divider_gray"
+            app:strokeWidth="1dp"
             android:layout_marginStart="8dp">
             <LinearLayout
                 android:layout_width="match_parent"
@@ -188,8 +190,9 @@
     </LinearLayout>
 
     <!-- 동네 인증하기 버튼 -->
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/buttonCertifyLocation"
+        style="@style/YellowContainedButton"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:text="동네 인증하기"

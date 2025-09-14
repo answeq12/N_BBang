@@ -11,43 +11,61 @@ import com.bergi.nbang_v1.R
 import com.bergi.nbang_v1.data.Message
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
-import java.text.SimpleDateFormat // --- 추가 ---
-import java.util.Locale         // --- 추가 ---
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import com.google.firebase.firestore.FirebaseFirestore
 
 class MessageAdapter : ListAdapter<Message, RecyclerView.ViewHolder>(DiffCallback) {
 
     private val currentUserUid = Firebase.auth.currentUser?.uid
+    private val firestore = FirebaseFirestore.getInstance() // Firestore 인스턴스 추가
 
     companion object {
         private const val VIEW_TYPE_SENT = 1
         private const val VIEW_TYPE_RECEIVED = 2
     }
 
-    // '내가 보낸 메시지'의 UI 요소를 보관하는 ViewHolder
     inner class SentMessageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val messageTextView: TextView = itemView.findViewById(R.id.textView_message)
-        private val timestampTextView: TextView = itemView.findViewById(R.id.textView_timestamp) // --- 추가 ---
+        private val timestampTextView: TextView = itemView.findViewById(R.id.textView_timestamp)
 
         fun bind(message: Message) {
             messageTextView.text = message.message
-            // Date 객체를 "오전/오후 h:mm" 형식의 문자열로 변환하여 설정
-            val format = SimpleDateFormat("a h:mm", Locale.KOREA) // --- 추가 ---
-            timestampTextView.text = format.format(message.timestamp) // --- 추가 ---
+            message.timestamp?.let { firebaseTimestamp ->
+                val javaUtilDate: Date = firebaseTimestamp.toDate()
+                val format = SimpleDateFormat("a h:mm", Locale.KOREA)
+                timestampTextView.text = format.format(javaUtilDate)
+            }
         }
     }
 
-    // '상대방이 보낸 메시지'의 UI 요소를 보관하는 ViewHolder
     inner class ReceivedMessageViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val messageTextView: TextView = itemView.findViewById(R.id.textView_message)
         private val senderTextView: TextView = itemView.findViewById(R.id.textView_sender)
-        private val timestampTextView: TextView = itemView.findViewById(R.id.textView_timestamp) // --- 추가 ---
+        private val timestampTextView: TextView = itemView.findViewById(R.id.textView_timestamp)
 
         fun bind(message: Message) {
             messageTextView.text = message.message
-            senderTextView.text = message.senderUid
-            // Date 객체를 "오전/오후 h:mm" 형식의 문자열로 변환하여 설정
-            val format = SimpleDateFormat("a h:mm", Locale.KOREA) // --- 추가 ---
-            timestampTextView.text = format.format(message.timestamp) // --- 추가 ---
+            message.timestamp?.let { firebaseTimestamp ->
+                val javaUtilDate: Date = firebaseTimestamp.toDate()
+                val format = SimpleDateFormat("a h:mm", Locale.KOREA)
+                timestampTextView.text = format.format(javaUtilDate)
+            }
+
+            // 닉네임 가져오기 및 설정
+            message.senderUid?.let { uid ->
+                firestore.collection("users").document(uid).get()
+                    .addOnSuccessListener { document ->
+                        val nickname = document.getString("nickname")
+                        senderTextView.text = nickname ?: "알 수 없음"
+                    }
+                    .addOnFailureListener {
+                        senderTextView.text = "오류"
+                    }
+            } ?: run {
+                senderTextView.text = "알 수 없음"
+            }
         }
     }
 
@@ -83,7 +101,7 @@ class MessageAdapter : ListAdapter<Message, RecyclerView.ViewHolder>(DiffCallbac
 
     object DiffCallback : DiffUtil.ItemCallback<Message>() {
         override fun areItemsTheSame(oldItem: Message, newItem: Message): Boolean {
-            return oldItem.timestamp == newItem.timestamp
+            return oldItem.timestamp == newItem.timestamp && oldItem.senderUid == newItem.senderUid
         }
 
         override fun areContentsTheSame(oldItem: Message, newItem: Message): Boolean {

@@ -7,37 +7,44 @@ import android.location.Geocoder
 import android.location.Location
 import android.os.Bundle
 import android.os.Looper
-import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.google.android.gms.location.*
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.GeoPoint // GeoPoint import 추가
+import com.google.firebase.firestore.GeoPoint
 import com.google.firebase.ktx.Firebase
-import java.util.Locale
+import com.naver.maps.geometry.LatLng
+import com.naver.maps.map.*
+import com.naver.maps.map.overlay.Marker
+import java.util.*
 
-class VerifyLocationActivity : BaseActivity() {
+class VerifyLocationActivity : AppCompatActivity(), OnMapReadyCallback {
 
+    // ... (변수 선언은 그대로) ...
     private lateinit var locationTextView: TextView
     private lateinit var confirmButton: Button
     private lateinit var progressBar: ProgressBar
+    private lateinit var mapView: MapView
+    private lateinit var naverMap: NaverMap
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var db: FirebaseFirestore
     private var currentLocationString: String? = null
-    private var currentLocation: Location? = null // 현재 위치 좌표를 저장할 변수 추가
+    private var currentLocation: Location? = null
     private val TAG = "VerifyLocationActivity"
 
     private val locationPermissionRequest = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
         if (isGranted) {
+            // [수정] 권한 획득 후 바로 위치 가져오기
             getCurrentLocation()
         } else {
             Toast.makeText(this, "위치 권한이 필요합니다.", Toast.LENGTH_SHORT).show()
@@ -49,18 +56,38 @@ class VerifyLocationActivity : BaseActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_verify_location)
 
+        // ... (뷰, fusedLocationClient, db 초기화는 그대로) ...
         locationTextView = findViewById(R.id.textViewCurrentLocation)
         confirmButton = findViewById(R.id.buttonConfirmLocation)
         progressBar = findViewById(R.id.progressBar)
+        mapView = findViewById(R.id.mapView)
+        mapView.onCreate(savedInstanceState)
+        mapView.getMapAsync(this) // onMapReady 콜백을 요청
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
         db = FirebaseFirestore.getInstance()
 
-        checkPermissionAndGetLocation()
-
         confirmButton.setOnClickListener {
             saveLocationToFirestore()
         }
+    }
+
+    override fun onMapReady(naverMap: NaverMap) {
+        this.naverMap = naverMap
+
+        // 지도 UI 설정 (조작 비활성화)
+        val uiSettings = naverMap.uiSettings
+        uiSettings.isLocationButtonEnabled = false
+        uiSettings.isCompassEnabled = false
+        uiSettings.isScaleBarEnabled = false
+        uiSettings.isZoomControlEnabled = false
+        uiSettings.isScrollGesturesEnabled = false
+        uiSettings.isZoomGesturesEnabled = false
+        uiSettings.isTiltGesturesEnabled = false
+        uiSettings.isRotateGesturesEnabled = false
+
+        // [수정] 지도가 준비된 후에 위치 권한을 확인하고 위치를 가져오도록 순서 변경
+        checkPermissionAndGetLocation()
     }
 
     private fun checkPermissionAndGetLocation() {
@@ -94,7 +121,17 @@ class VerifyLocationActivity : BaseActivity() {
     }
 
     private fun updateUIToShowLocation(location: Location) {
-        this.currentLocation = location // --- 현재 위치 좌표를 변수에 저장 ---
+        this.currentLocation = location
+
+        if (::naverMap.isInitialized) {
+            val currentPosition = LatLng(location.latitude, location.longitude)
+            naverMap.moveCamera(CameraUpdate.scrollTo(currentPosition))
+            Marker().apply {
+                position = currentPosition
+                map = naverMap
+            }
+        }
+
         val geocoder = Geocoder(this, Locale.KOREA)
         try {
             val addresses = geocoder.getFromLocation(location.latitude, location.longitude, 1)
@@ -133,14 +170,13 @@ class VerifyLocationActivity : BaseActivity() {
         confirmButton.isEnabled = false
         progressBar.visibility = View.VISIBLE
 
-        // --- Firestore에 저장할 데이터에 좌표(GeoPoint)를 추가합니다 ---
         val locationData = mapOf(
             "location" to currentLocationString,
             "locationPoint" to GeoPoint(currentLocation!!.latitude, currentLocation!!.longitude)
         )
 
         db.collection("users").document(user.uid)
-            .update(locationData) // 주소 이름과 좌표를 함께 업데이트
+            .update(locationData)
             .addOnSuccessListener {
                 Toast.makeText(this, "'$currentLocationString' 인증 완료!", Toast.LENGTH_SHORT).show()
                 setResult(Activity.RESULT_OK)
@@ -158,5 +194,34 @@ class VerifyLocationActivity : BaseActivity() {
         locationTextView.text = message
         progressBar.visibility = View.GONE
         confirmButton.isEnabled = false
+    }
+
+    override fun onStart() {
+        super.onStart()
+        mapView.onStart()
+    }
+    override fun onResume() {
+        super.onResume()
+        mapView.onResume()
+    }
+    override fun onPause() {
+        super.onPause()
+        mapView.onPause()
+    }
+    override fun onStop() {
+        super.onStop()
+        mapView.onStop()
+    }
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        mapView.onSaveInstanceState(outState)
+    }
+    override fun onDestroy() {
+        super.onDestroy()
+        mapView.onDestroy()
+    }
+    override fun onLowMemory() {
+        super.onLowMemory()
+        mapView.onLowMemory()
     }
 }

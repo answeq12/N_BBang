@@ -19,7 +19,7 @@
             android:layout_height="wrap_content"
             android:maxWidth="240dp"
             android:text="내가 보낸 메시지 내용입니다. 길어질 경우 자동으로 줄바꿈됩니다."
-            android:textColor="@android:color/white"
+            android:textColor="@android:color/black"
             android:textSize="16sp" />
 
     </LinearLayout>

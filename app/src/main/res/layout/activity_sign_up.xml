@@ -69,8 +69,9 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/checkboxVerifyPhone" />
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/buttonSendCode"
+        style="@style/GrayContainedButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="인증번호 받기"
@@ -90,20 +91,23 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/editTextPhoneNumber" />
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/buttonVerifyCode"
+        style="@style/GrayContainedButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="인증하기"
         app:layout_constraintBaseline_toBaselineOf="@+id/editTextVerificationCode"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/buttonConfirmSignUp"
+        style="@style/YellowContainedButton"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
         android:text="가입 완료"
+        android:minHeight="56dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/editTextVerificationCode" />
