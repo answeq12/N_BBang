@@ -66,6 +66,21 @@
         app:layout_constraintStart_toStartOf="@+id/textViewLabelManner"
         app:layout_constraintTop_toBottomOf="@+id/textViewLabelManner" />
 
+    <!-- ✅ 추가된 후기 작성 버튼 -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/button_write_review"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="20dp"
+        android:layout_marginTop="24dp"
+        android:layout_marginEnd="20dp"
+        android:text="후기 작성"
+        android:visibility="gone"
+        style="@style/YellowContainedButton"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/progressBarManner" />
+
     <TextView
         android:id="@+id/textViewLabelPosts"
         android:layout_width="wrap_content"
@@ -73,7 +88,7 @@
         android:layout_marginTop="24dp"
         android:text="작성한 N빵"
         app:layout_constraintStart_toStartOf="@+id/textViewLabelManner"
-        app:layout_constraintTop_toBottomOf="@+id/progressBarManner" />
+        app:layout_constraintTop_toBottomOf="@+id/button_write_review" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerViewUserPosts"
