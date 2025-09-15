@@ -90,10 +90,14 @@ class CreatePostActivity : AppCompatActivity() {
         searchAddressLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
                 val data = result.data
+                // 'placeName'을 가져오는 부분은 유지하되, EditText에 설정하는 코드를 제거합니다.
                 val placeName = data?.getStringExtra("placeName")
                 val latitude = data?.getDoubleExtra("latitude", 0.0)
                 val longitude = data?.getDoubleExtra("longitude", 0.0)
-                editTextPlace.setText(placeName)
+
+                // 아래 코드를 제거하여 '만날 장소'에 주소가 자동으로 입력되지 않게 합니다.
+                // editTextPlace.setText(placeName)
+
                 if (latitude != null && longitude != null && (latitude != 0.0 || longitude != 0.0)) {
                     selectedMeetingLocation = GeoPoint(latitude, longitude)
                 }
@@ -142,9 +146,15 @@ class CreatePostActivity : AppCompatActivity() {
         val title = editTextTitle.text.toString().trim()
         val totalPeople = editTextPeople.text.toString().trim().toIntOrNull()
         val meetingLocation = selectedMeetingLocation
+        val meetingPlaceName = editTextPlace.text.toString().trim()
 
         if (title.isEmpty() || totalPeople == null || totalPeople <= 1 || meetingLocation == null) {
             Toast.makeText(this, "필수 항목(제목, 인원, 장소)을 올바르게 입력해주세요.", Toast.LENGTH_SHORT).show()
+            return
+        }
+        // 사용자가 만날 장소 이름을 입력했는지 확인하는 로직을 추가합니다.
+        if (meetingPlaceName.isEmpty()) {
+            Toast.makeText(this, "만날 장소 이름을 입력해주세요.", Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -158,7 +168,8 @@ class CreatePostActivity : AppCompatActivity() {
             creatorName = currentUser.displayName ?: "익명",
             photoUrls = photoUrls,
             totalPeople = totalPeople,
-            meetingPlaceName = editTextPlace.text.toString().trim(),
+            // 수정된 코드: '만날 장소'는 사용자가 직접 입력한 값으로 설정합니다.
+            meetingPlaceName = meetingPlaceName,
             meetingLocation = meetingLocation,
             geohash = geohash,
             creatorUid = creatorUid,
