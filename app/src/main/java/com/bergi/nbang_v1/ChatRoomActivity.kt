@@ -3,9 +3,10 @@ package com.bergi.nbang_v1
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
-import android.view.View // <<< 여기를 추가했습니다!
+import android.view.View
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
@@ -28,6 +29,8 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
 import com.google.firebase.ktx.Firebase
+import com.google.firebase.firestore.FieldValue
+import java.util.Arrays
 
 class ChatRoomActivity : AppCompatActivity() {
 
@@ -39,6 +42,7 @@ class ChatRoomActivity : AppCompatActivity() {
     private lateinit var completeDealButton: Button
     private lateinit var drawerLayout: DrawerLayout
     private lateinit var participantsRecyclerView: RecyclerView
+    private lateinit var completeRecruitmentButtonInDrawer: Button
 
     private val firestore = FirebaseFirestore.getInstance()
     private val auth = Firebase.auth
@@ -77,6 +81,7 @@ class ChatRoomActivity : AppCompatActivity() {
         completeDealButton = findViewById(R.id.button_complete_deal)
         drawerLayout = findViewById(R.id.drawer_layout)
         participantsRecyclerView = findViewById(R.id.recyclerView_participants)
+        completeRecruitmentButtonInDrawer = findViewById(R.id.button_complete_recruitment_drawer)
     }
 
     private fun setupToolbar(title: String?) {
@@ -96,7 +101,7 @@ class ChatRoomActivity : AppCompatActivity() {
                 finish()
                 true
             }
-            R.id.action_view_participants -> {
+            R.id.action_drawer -> {
                 drawerLayout.openDrawer(GravityCompat.END)
                 true
             }
@@ -165,24 +170,41 @@ class ChatRoomActivity : AppCompatActivity() {
         }
     }
 
+    // ✅ 수정: 채팅방 정보와 게시글 정보를 동시에 불러오도록 수정
     private fun loadChatRoomInfo() {
         chatRoomId?.let { id ->
-            firestore.collection("chatRooms").document(id)
-                .addSnapshotListener { documentSnapshot, e ->
-                    if (e != null) {
-                        Log.w("ChatRoomActivity", "채팅방 정보 불러오기 실패", e)
-                        return@addSnapshotListener
-                    }
+            val chatRoomRef = firestore.collection("chatRooms").document(id)
+            chatRoomRef.addSnapshotListener { documentSnapshot, e ->
+                if (e != null) {
+                    Log.w("ChatRoomActivity", "채팅방 정보 불러오기 실패", e)
+                    return@addSnapshotListener
+                }
 
-                    if (documentSnapshot != null && documentSnapshot.exists()) {
-                        currentChatRoom = documentSnapshot.toObject(ChatRoom::class.java)
-                        currentChatRoom?.let {
-                            toolbar.subtitle = "참여자: ${it.participants?.size ?: 0}명"
-                            updateCompleteDealButtonState(it)
-                            setupParticipantsList(it)
+                if (documentSnapshot != null && documentSnapshot.exists()) {
+                    currentChatRoom = documentSnapshot.toObject(ChatRoom::class.java)
+                    currentChatRoom?.let { chatRoom ->
+                        toolbar.subtitle = "참여자: ${chatRoom.participants?.size ?: 0}명"
+                        setupParticipantsList(chatRoom)
+                        updateDrawerButtons(chatRoom)
+
+                        // ✅ 추가: postId를 사용하여 게시글 정보 불러오기
+                        val postId = chatRoom.postId
+                        if (postId != null) {
+                            firestore.collection("posts").document(postId).get()
+                                .addOnSuccessListener { postSnapshot ->
+                                    val postStatus = postSnapshot.getString("status")
+                                    updateButtonsVisibility(chatRoom, postStatus)
+                                }
+                                .addOnFailureListener { postError ->
+                                    Log.e("ChatRoomActivity", "게시글 정보 불러오기 실패", postError)
+                                }
+                        } else {
+                            // postId가 없는 경우 (예외 처리)
+                            updateButtonsVisibility(chatRoom, null)
                         }
                     }
                 }
+            }
         }
     }
 
@@ -216,7 +238,6 @@ class ChatRoomActivity : AppCompatActivity() {
     private fun showParticipantOptions(participant: Participant) {
         val options = mutableListOf("프로필 보기")
 
-        // Add Like, Report, and Review options based on conditions
         if (participant.uid != auth.currentUser?.uid) {
             if (currentChatRoom?.isCompleted == true) {
                 options.add("좋아요")
@@ -261,43 +282,47 @@ class ChatRoomActivity : AppCompatActivity() {
 
             val usersWhoLiked = chatRoom?.usersWhoLiked ?: emptyList()
             if (usersWhoLiked.contains(likerId)) {
-                // Throw an exception to abort the transaction and jump to onFailure
                 throw Exception("이미 이 채팅방에서 좋아요를 눌렀습니다.")
             }
 
-            // Proceed with liking
-            transaction.update(targetUserRef, "mannerScore", com.google.firebase.firestore.FieldValue.increment(0.5))
-            transaction.update(chatRoomRef, "usersWhoLiked", com.google.firebase.firestore.FieldValue.arrayUnion(likerId))
+            transaction.update(targetUserRef, "mannerScore", FieldValue.increment(0.5))
+            transaction.update(chatRoomRef, "usersWhoLiked", FieldValue.arrayUnion(likerId))
 
-            null // Transaction must return null
+            null
         }.addOnSuccessListener {
             Toast.makeText(this, "${targetUser.nickname}님에게 좋아요를 보냈습니다!", Toast.LENGTH_SHORT).show()
         }.addOnFailureListener { e ->
-            // The exception message from the transaction is caught here
             Toast.makeText(this, e.message ?: "좋아요 처리에 실패했습니다.", Toast.LENGTH_SHORT).show()
             Log.w("ChatRoomActivity", "Like transaction failed.", e)
         }
     }
 
+    // ✅ 추가: '모집 완료' 상태에 따라 버튼을 보이거나 숨기는 함수
+    private fun updateButtonsVisibility(chatRoom: ChatRoom, postStatus: String?) {
+        if (postStatus == "모집완료") {
+            completeDealButton.visibility = View.VISIBLE
+            // '거래 완료' 버튼 로직 (기존 함수 내용)
+            val currentUserId = auth.currentUser?.uid
+            val completingUsers = chatRoom.completingUsers ?: emptyMap()
+            if (currentUserId != null && completingUsers.containsKey(currentUserId)) {
+                completeDealButton.text = "거래 완료 동의함"
+                completeDealButton.isEnabled = false
+            } else {
+                completeDealButton.text = "거래 완료"
+                completeDealButton.isEnabled = true
+            }
 
-    private fun updateCompleteDealButtonState(chatRoom: ChatRoom) {
-        if (chatRoom.isCompleted) {
-            completeDealButton.visibility = View.GONE
-            return
-        }
+            // 거래가 이미 완료된 경우 버튼 숨기기
+            if (chatRoom.isCompleted) {
+                completeDealButton.visibility = View.GONE
+            }
 
-        val currentUserId = auth.currentUser?.uid
-        val completingUsers = chatRoom.completingUsers ?: emptyMap()
-
-        if (currentUserId != null && completingUsers.containsKey(currentUserId)) {
-            completeDealButton.text = "거래 완료 동의함"
-            completeDealButton.isEnabled = false
         } else {
-            completeDealButton.text = "거래 완료"
-            completeDealButton.isEnabled = true
+            // '모집 완료' 상태가 아니면 '거래 완료' 버튼 숨기기
+            completeDealButton.visibility = View.GONE
         }
-        completeDealButton.visibility = View.VISIBLE
     }
+
 
     private fun completeDeal() {
         val currentUserId = auth.currentUser?.uid ?: return
@@ -324,6 +349,25 @@ class ChatRoomActivity : AppCompatActivity() {
             }.addOnFailureListener { e ->
                 Log.e("ChatRoomActivity", "거래 완료 트랜잭션 실패", e)
             }
+        }
+    }
+
+    // ✅ 추가: 드로어 버튼 상태 업데이트 함수
+    private fun updateDrawerButtons(chatRoom: ChatRoom) {
+        if (auth.currentUser?.uid == chatRoom.creatorUid) {
+            completeRecruitmentButtonInDrawer.visibility = View.VISIBLE
+            completeRecruitmentButtonInDrawer.setOnClickListener {
+                firestore.collection("posts").document(chatRoom.postId!!).update("status", "모집완료")
+                    .addOnSuccessListener {
+                        Toast.makeText(this, "게시글이 모집 완료되었습니다.", Toast.LENGTH_SHORT).show()
+                        drawerLayout.closeDrawer(GravityCompat.END)
+                    }
+                    .addOnFailureListener {
+                        Toast.makeText(this, "모집 완료 처리에 실패했습니다.", Toast.LENGTH_SHORT).show()
+                    }
+            }
+        } else {
+            completeRecruitmentButtonInDrawer.visibility = View.GONE
         }
     }
 }

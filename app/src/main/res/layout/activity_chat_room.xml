@@ -8,7 +8,7 @@
     tools:context=".ChatRoomActivity"
     tools:openDrawer="end">
 
-    <!-- Main Content -->
+    <!-- 메인 콘텐츠 (채팅 화면) -->
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
@@ -86,7 +86,7 @@
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 
-    <!-- Drawer Content -->
+    <!-- 드로어 (오른쪽에서 나오는 메뉴) -->
     <LinearLayout
         android:layout_width="300dp"
         android:layout_height="match_parent"
@@ -107,6 +107,19 @@
             android:layout_height="0dp"
             android:layout_weight="1"
             tools:listitem="@layout/item_participant"/>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_complete_recruitment_drawer"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="모집 완료"
+            android:textColor="@color/white"
+            android:backgroundTint="@color/green_button"
+            app:cornerRadius="20dp"
+            android:layout_margin="16dp"
+            android:visibility="gone"
+            tools:visibility="visible" />
 
     </LinearLayout>
 

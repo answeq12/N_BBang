@@ -2,8 +2,8 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
-        android:id="@+id/action_view_participants"
-        android:icon="@drawable/ic_people"
-        android:title="참여자 목록"
-        app:showAsAction="ifRoom" />
+        android:id="@+id/action_drawer"
+        android:icon="@drawable/ic_menu"
+        android:title="참가자 목록"
+        app:showAsAction="always" />
 </menu>
