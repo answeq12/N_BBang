@@ -87,7 +87,9 @@
         <activity
             android:name=".ChatRoomActivity"
             android:exported="false" />
-
+        <activity
+            android:name=".ReceivedReviewsActivity"
+            android:exported="false" />
         <activity
             android:name=".MapDetailActivity"
             android:exported="false" />
