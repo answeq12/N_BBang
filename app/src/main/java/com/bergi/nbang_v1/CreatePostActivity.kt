@@ -26,6 +26,7 @@ import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.ktx.storage
 import com.firebase.geofire.GeoFireUtils
 import com.firebase.geofire.GeoLocation
+import com.google.firebase.firestore.FieldValue
 import java.util.*
 
 class CreatePostActivity : AppCompatActivity() {
@@ -181,15 +182,17 @@ class CreatePostActivity : AppCompatActivity() {
             val initialCompletionStatus = mapOf(creatorUid to false)
             val chatRoomData = hashMapOf(
                 "postId" to postId,
-                "creatorUid" to creatorUid,
-                "participants" to initialParticipants,
-                "postTitle" to title,
-                "lastMessage" to "채팅방이 개설되었습니다.",
-                "lastMessageTimestamp" to Timestamp.now(),
-                "status" to "모집중",
-                "completionStatus" to initialCompletionStatus,
-                "isDealFullyCompleted" to false
+                "postTitle" to newPost.title,
+                "creatorUid" to currentUser.uid,
+                "participants" to listOf(currentUser.uid),
+                "createdAt" to FieldValue.serverTimestamp(),
+                "lastMessageTimestamp" to FieldValue.serverTimestamp(),
+                "lastMessage" to "",
+                "status" to "모집중", // 예: 초기 상태를 "모집중"으로 설정
+                "completionStatus" to emptyMap<String, Boolean>(), // Map<String, Boolean> 형태의 빈 맵으로 초기화
+                "isDealFullyCompleted" to false // Boolean 값 false로 초기화
             )
+
             firestore.collection("chatRooms").document(postId).set(chatRoomData).addOnSuccessListener {
                 Toast.makeText(this, "게시글이 등록되었습니다.", Toast.LENGTH_SHORT).show()
                 finish()
