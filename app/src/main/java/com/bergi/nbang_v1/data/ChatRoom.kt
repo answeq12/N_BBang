@@ -13,8 +13,6 @@ data class ChatRoom(
     val usersWhoLiked: List<String>? = null,
     val status: String? = "모집중",
     val unreadCount: Int = 0,
-
-    // ▼▼▼ 이 필드들이 누락되어 있었습니다 ▼▼▼
     val completionStatus: Map<String, Boolean>? = null,
     val isDealFullyCompleted: Boolean? = false
 ) {
