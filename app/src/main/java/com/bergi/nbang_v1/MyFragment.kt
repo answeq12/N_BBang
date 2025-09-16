@@ -2,6 +2,7 @@ package com.bergi.nbang_v1
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log // Log import 추가
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -26,6 +27,7 @@ class MyFragment : Fragment() {
     private lateinit var mannerScoreProgressBar: ProgressBar
     private lateinit var receivedReviewsCard: MaterialCardView
 
+    // ... (onCreateView, onViewCreated, onResume, initViews, setupClickListeners 생략) ...
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -76,40 +78,65 @@ class MyFragment : Fragment() {
             startActivity(Intent(requireContext(), VerifyLocationActivity::class.java))
         }
 
-        // 받은 후기 버튼을 눌렀을 때의 동작을 추가합니다.
-        // ReceivedReviewsActivity는 미리 만들어두어야 합니다.
         receivedReviewsCard.setOnClickListener {
             val intent = Intent(requireContext(), ReceivedReviewsActivity::class.java)
-            // 현재 로그인한 사용자의 UID를 "USER_ID"라는 이름으로 Intent에 추가
             intent.putExtra("USER_ID", user?.uid)
             startActivity(intent)
         }
     }
 
-    // 닉네임과 매너 점수 정보를 불러오는 함수
+
     private fun loadMyInfo() {
-        val user = Firebase.auth.currentUser ?: return
+        val user = Firebase.auth.currentUser
+        if (user == null) {
+            Log.e("MyFragment", "User is null, cannot load info.")
+            return
+        }
         nicknameTextView.text = user.displayName ?: user.email
+        Log.d("MyFragment", "Loading info for user: ${user.uid}")
 
         FirebaseFirestore.getInstance().collection("reviews")
             .whereEqualTo("reviewedUserUid", user.uid)
             .get()
             .addOnSuccessListener { documents ->
+                Log.d("MyFragment", "Fetched ${documents?.size() ?: 0} review documents for manner score.")
                 val reviews = documents.toObjects<Review>()
-                val averageRatingFiveScale = if (reviews.isNotEmpty()) {
-                    reviews.sumOf { it.rating.toDouble() } / reviews.size
-                } else {
-                    2.5 // << 후기 없을 때 5점 만점 기준 2.5점으로 설정 (10점 만점 기준 5.0점이 됨)
-                }
+                Log.d("MyFragment", "Converted to ${reviews.size} Review objects.")
 
-                // 0-5점 스케일의 평균을 0-10점 스케일로 변환
+                // --- 여기부터 매너점수 계산 로직 수정 ---
+                val initialDefaultScore = 2.5 // 5점 만점 기준 초기 점수
+                val sumOfActualRatings = reviews.sumOf { it.rating.toDouble() }
+                val numberOfActualReviews = reviews.size
+
+                Log.d("MyFragment", "Initial default score (5-scale): $initialDefaultScore")
+                Log.d("MyFragment", "Sum of actual ratings: $sumOfActualRatings, Number of actual reviews: $numberOfActualReviews")
+
+                // 전체 합계: 실제 리뷰 점수 합계 + 초기 기본 점수
+                val totalSumForAverage = sumOfActualRatings + initialDefaultScore
+                // 전체 개수: 실제 리뷰 개수 + 초기 기본 점수 1개
+                val totalCountForAverage = numberOfActualReviews + 1
+
+                Log.d("MyFragment", "Total sum for average calculation: $totalSumForAverage")
+                Log.d("MyFragment", "Total count for average calculation: $totalCountForAverage")
+
+                val averageRatingFiveScale = totalSumForAverage / totalCountForAverage
+                // --- 여기까지 매너점수 계산 로직 수정 ---
+
+                Log.d("MyFragment", "Final averageRatingFiveScale: $averageRatingFiveScale")
+
                 val averageRatingTenScale = averageRatingFiveScale * 2.0
+                Log.d("MyFragment", "Final averageRatingTenScale: $averageRatingTenScale")
 
-                // ProgressBar는 0-5점 평균을 기준으로 100%를 채우도록 설정
-                val progressPercentage = (averageRatingFiveScale / 5.0 * 100).toInt() // 2.5점일 경우 50%
+                val progressPercentage = (averageRatingFiveScale / 5.0 * 100).toInt()
+                Log.d("MyFragment", "Final progressPercentage: $progressPercentage")
 
-                mannerScoreTextView.text = "%.1f점".format(averageRatingTenScale) // 10점 만점 기준으로 텍스트 표시
+                mannerScoreTextView.text = "%.1f점".format(averageRatingTenScale)
                 mannerScoreProgressBar.progress = progressPercentage
+                Log.d("MyFragment", "Displayed manner score: ${mannerScoreTextView.text}")
+            }
+            .addOnFailureListener { e ->
+                Log.e("MyFragment", "Error fetching reviews for manner score: ", e)
             }
     }
+
 }
