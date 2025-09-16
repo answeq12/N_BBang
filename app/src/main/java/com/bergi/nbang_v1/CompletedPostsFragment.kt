@@ -7,7 +7,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -24,20 +23,16 @@ class CompletedPostsFragment : Fragment() {
         val recyclerView: RecyclerView = view.findViewById(R.id.recyclerViewPostList)
         val emptyTextView: TextView = view.findViewById(R.id.textViewEmptyList)
 
-        // [수정] PostAdapter 생성 시 onReviewClick 람다 함수 추가
         val postAdapter = PostAdapter(
             mutableListOf(),
             onItemClick = { post ->
-                // 기존 아이템 클릭 시 상세 화면으로 이동
                 val intent = Intent(requireContext(), PostDetailActivity::class.java)
                 intent.putExtra("POST_ID", post.id)
                 startActivity(intent)
             },
             onReviewClick = { post ->
                 val intent = Intent(requireContext(), SelectRevieweeActivity::class.java)
-                // 참여자 UID 목록을 ArrayList 형태로 변환하여 전달
-                intent.putStringArrayListExtra("PARTICIPANT_UIDS", ArrayList(post.participants))
-                intent.putExtra("CREATOR_UID", post.creatorUid)
+                intent.putExtra("POST_ID", post.id)
                 startActivity(intent)
             }
         )
@@ -57,11 +52,9 @@ class CompletedPostsFragment : Fragment() {
                         postAdapter.updatePosts(emptyList())
                         return@addSnapshotListener
                     }
-
                     val posts = snapshots?.toObjects(Post::class.java)?.mapIndexed { index, post ->
                         post.apply { id = snapshots.documents[index].id }
                     } ?: emptyList()
-
                     postAdapter.updatePosts(posts)
                     emptyTextView.visibility = if (posts.isEmpty()) View.VISIBLE else View.GONE
                 }

@@ -25,5 +25,6 @@ data class Post(
     var geohash: String? = null,
     @ServerTimestamp
     var timestamp: Timestamp? = null,
-    val keywords: List<String> = emptyList()
+    val keywords: List<String> = emptyList(),
+    val reviewsWritten: Map<String, List<String>> = emptyMap()
 )

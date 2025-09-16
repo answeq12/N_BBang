@@ -10,9 +10,10 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bergi.nbang_v1.R
 import com.bergi.nbang_v1.data.Post
 import com.bumptech.glide.Glide
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 import java.util.Date
 
-// [수정] 후기 작성 버튼 클릭 콜백 추가
 class PostAdapter(
     private val posts: MutableList<Post>,
     private val onItemClick: (Post) -> Unit,
@@ -20,7 +21,6 @@ class PostAdapter(
 ) : RecyclerView.Adapter<PostAdapter.PostViewHolder>() {
 
     inner class PostViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        // [수정] item_post.xml의 ID와 일치하도록 뷰 변수 업데이트
         private val category: TextView = itemView.findViewById(R.id.textViewPostCategory)
         private val status: TextView = itemView.findViewById(R.id.textViewPostStatus)
         private val title: TextView = itemView.findViewById(R.id.textViewPostTitle)
@@ -29,7 +29,6 @@ class PostAdapter(
         private val timestamp: TextView = itemView.findViewById(R.id.textViewPostTimestamp)
         private val thumbnailImageView: ImageView = itemView.findViewById(R.id.imageViewThumbnail)
         private val creatorNickname: TextView = itemView.findViewById(R.id.textViewCreatorNickname)
-        // [추가] 후기 작성 버튼
         private val writeReviewButton: Button = itemView.findViewById(R.id.buttonWriteReview)
 
         fun bind(post: Post) {
@@ -49,9 +48,21 @@ class PostAdapter(
                 thumbnailImageView.visibility = View.VISIBLE
             }
 
-            // [추가] 게시글 상태에 따라 '후기 작성' 버튼 보이기/숨기기
             if (post.status == "거래완료") {
-                writeReviewButton.visibility = View.VISIBLE
+                val myUid = Firebase.auth.currentUser?.uid
+                if (myUid != null) {
+                    val otherParticipants = post.participants.filter { it != myUid }
+                    val myReviewedUids = post.reviewsWritten[myUid] ?: emptyList()
+
+                    if (otherParticipants.isNotEmpty() && myReviewedUids.containsAll(otherParticipants)) {
+                        writeReviewButton.text = "후기 작성 완료"
+                        writeReviewButton.isEnabled = false
+                    } else {
+                        writeReviewButton.text = "후기 작성"
+                        writeReviewButton.isEnabled = true
+                    }
+                    writeReviewButton.visibility = View.VISIBLE
+                }
             } else {
                 writeReviewButton.visibility = View.GONE
             }
@@ -70,9 +81,7 @@ class PostAdapter(
         holder.bind(posts[position])
     }
 
-    override fun getItemCount(): Int {
-        return posts.size
-    }
+    override fun getItemCount(): Int = posts.size
 
     fun updatePosts(newPosts: List<Post>) {
         posts.clear()
@@ -83,11 +92,9 @@ class PostAdapter(
     private fun formatTimestamp(timestamp: com.google.firebase.Timestamp?): String {
         if (timestamp == null) return ""
         val diff = Date().time - timestamp.toDate().time
-        val seconds = diff / 1000
-        val minutes = seconds / 60
+        val minutes = diff / (1000 * 60)
         val hours = minutes / 60
         val days = hours / 24
-
         return when {
             days > 0 -> "${days}일 전"
             hours > 0 -> "${hours}시간 전"
