@@ -156,22 +156,40 @@ class ChatRoomActivity : AppCompatActivity() {
     private fun onCompleteDealClicked() {
         val myUid = auth.currentUser?.uid ?: return
         val roomRef = firestore.collection("chatRooms").document(chatRoomId!!)
-        val postRef = firestore.collection("posts").document(chatRoomId!!) // [추가] 게시글 참조
 
+        // 1. 내 상태를 '완료'로 업데이트
         roomRef.update("completionStatus.$myUid", true).addOnSuccessListener {
+            // 2. 채팅방 전체 인원의 완료 상태 확인
             roomRef.get().addOnSuccessListener { document ->
                 val chatRoom = document.toObject(ChatRoom::class.java)
-                val completionStatus = chatRoom?.completionStatus
-                val allParticipants = chatRoom?.participants
+                if (chatRoom == null) {
+                    Toast.makeText(this, "채팅방 정보를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show()
+                    return@addOnSuccessListener
+                }
 
+                // [핵심 수정] 채팅방 데이터에서 실제 postId를 가져옵니다.
+                val actualPostId = chatRoom.postId
+                if (actualPostId == null) {
+                    Toast.makeText(this, "연결된 게시글 정보를 찾을 수 없습니다.", Toast.LENGTH_SHORT).show()
+                    return@addOnSuccessListener
+                }
+                val postRef = firestore.collection("posts").document(actualPostId)
+
+                val completionStatus = chatRoom.completionStatus
+                val allParticipants = chatRoom.participants
+
+                // 모든 참여자가 completionStatus 맵에 있고, 그 값이 모두 true인지 확인
                 val allCompleted = allParticipants?.all { uid -> completionStatus?.get(uid) == true } ?: false
 
                 if (allCompleted) {
-                    roomRef.update("isDealFullyCompleted", true)
-                    postRef.update("status", "거래완료")
-                        .addOnSuccessListener {
-                            Toast.makeText(this, "모든 참여자가 거래를 완료했습니다!", Toast.LENGTH_SHORT).show()
-                        }
+                    // --- 모든 참여자가 완료한 경우 ---
+                    // 채팅방과 게시글의 상태를 모두 업데이트
+                    firestore.runBatch { batch ->
+                        batch.update(roomRef, "isDealFullyCompleted", true)
+                        batch.update(postRef, "status", "거래완료")
+                    }.addOnSuccessListener {
+                        Toast.makeText(this, "모든 참여자가 거래를 완료했습니다!", Toast.LENGTH_LONG).show()
+                    }
                 } else {
                     Toast.makeText(this, "거래 완료에 동의했습니다.", Toast.LENGTH_SHORT).show()
                 }

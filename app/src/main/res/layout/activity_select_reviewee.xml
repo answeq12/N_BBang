@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="누구에게 후기를 남기시겠어요?"
+        android:textAppearance="?attr/textAppearanceHeadline5"
+        android:padding="16dp"/>
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerViewParticipants"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+</LinearLayout>

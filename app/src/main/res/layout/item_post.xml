@@ -116,6 +116,21 @@
             app:layout_constraintTop_toTopOf="@+id/iconLocation"
             tools:text="강남역 10번 출구 앞에서 만나요" />
 
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonWriteReview"
+            style="@style/GrayContainedButton"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="후기 작성"
+            android:visibility="gone"
+            tools:visibility="visible"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/textViewPostMeetingPlace" />
+
         <TextView
             android:id="@+id/textViewPostTimestamp"
             android:layout_width="wrap_content"

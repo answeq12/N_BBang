@@ -33,12 +33,7 @@ class UserProfileActivity : BaseActivity() {
     private lateinit var mannerScoreProgressBar: ProgressBar
     private lateinit var tabLayout: TabLayout
     private lateinit var viewPager: ViewPager2
-    private lateinit var buttonWriteReview: Button
 
-    // [수정] 숨김 처리된 UI 요소들은 변수 선언에서 제거
-    // private lateinit var createdPostsCountTextView: TextView
-    // private lateinit var participatedPostsCountTextView: TextView
-    // private lateinit var receivedReviewsCountTextView: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -56,11 +51,6 @@ class UserProfileActivity : BaseActivity() {
         setupToolbar()
         loadAndDisplayStats()
         setupViewPager()
-        checkIfReviewCanBeWritten()
-
-        buttonWriteReview.setOnClickListener {
-            startActivity(Intent(this, ReviewActivity::class.java).putExtra("REVIEWED_USER_ID", userId))
-        }
     }
 
     private fun initViews() {
@@ -70,12 +60,7 @@ class UserProfileActivity : BaseActivity() {
         mannerScoreProgressBar = findViewById(R.id.progressBarMannerScore)
         tabLayout = findViewById(R.id.tabLayoutPosts)
         viewPager = findViewById(R.id.viewPagerPosts)
-        buttonWriteReview = findViewById(R.id.button_write_review)
 
-        // [수정] 숨김 처리된 UI 요소들은 초기화 코드에서 제거
-        // createdPostsCountTextView = findViewById(R.id.textViewCreatedPostsCount)
-        // participatedPostsCountTextView = findViewById(R.id.textViewParticipatedPostsCount)
-        // receivedReviewsCountTextView = findViewById(R.id.textViewReviewsCount)
     }
 
     private fun setupToolbar() {
@@ -109,30 +94,9 @@ class UserProfileActivity : BaseActivity() {
         }
     }
 
-    private fun checkIfReviewCanBeWritten() {
-        val myUid = auth.currentUser?.uid
-        val otherUserUid = userId
-        if (myUid == null || otherUserUid == null || myUid == otherUserUid) {
-            buttonWriteReview.visibility = View.GONE; return
-        }
-
-        firestore.collection("chatRooms")
-            .whereEqualTo("isDealFullyCompleted", true)
-            .whereArrayContains("participants", myUid)
-            .get()
-            .addOnSuccessListener { querySnapshot ->
-                val canWriteReview = querySnapshot.documents.any { doc ->
-                    (doc.get("participants") as? List<*>)?.contains(otherUserUid) == true
-                }
-                buttonWriteReview.visibility = if (canWriteReview) View.VISIBLE else View.GONE
-            }
-    }
-
     private fun setupViewPager() {
-        // [수정] 탭이 2개이므로 UserProfilePagerAdapter도 2개의 Fragment를 처리하도록 수정해야 합니다.
         viewPager.adapter = UserProfilePagerAdapter(this, userId!!)
 
-        // [수정] 탭 제목을 '작성한 글', '받은 후기' 2개로 변경
         TabLayoutMediator(tabLayout, viewPager) { tab, position ->
             tab.text = when (position) {
                 0 -> "작성한 글"

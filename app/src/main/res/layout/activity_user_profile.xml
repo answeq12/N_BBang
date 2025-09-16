@@ -98,26 +98,12 @@
 
     </LinearLayout>
 
-    <Button
-        android:id="@+id/button_write_review"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="20dp"
-        android:layout_marginTop="24dp"
-        android:layout_marginEnd="20dp"
-        android:text="후기 작성"
-        android:visibility="gone"
-        tools:visibility="visible"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/layoutStats" />
-
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/tabLayoutPosts"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        app:layout_constraintTop_toBottomOf="@id/button_write_review"
+        app:layout_constraintTop_toBottomOf="@id/layoutStats"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 

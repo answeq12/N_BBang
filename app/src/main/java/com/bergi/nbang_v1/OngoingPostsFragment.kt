@@ -23,11 +23,17 @@ class OngoingPostsFragment : Fragment() {
         val recyclerView: RecyclerView = view.findViewById(R.id.recyclerViewPostList)
         val emptyTextView: TextView = view.findViewById(R.id.textViewEmptyList)
 
-        val postAdapter = PostAdapter(mutableListOf()) { post ->
-            val intent = Intent(requireContext(), PostDetailActivity::class.java)
-            intent.putExtra("POST_ID", post.id)
-            startActivity(intent)
-        }
+        // [수정] PostAdapter 생성자를 새 형식에 맞게 수정합니다.
+        val postAdapter = PostAdapter(
+            mutableListOf(),
+            onItemClick = { post ->
+                val intent = Intent(requireContext(), PostDetailActivity::class.java)
+                intent.putExtra("POST_ID", post.id)
+                startActivity(intent)
+            },
+            onReviewClick = { post ->
+            }
+        )
         recyclerView.layoutManager = LinearLayoutManager(context)
         recyclerView.adapter = postAdapter
 

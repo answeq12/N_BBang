@@ -96,11 +96,17 @@ class HomeFragment : Fragment() {
     }
 
     private fun setupRecyclerView() {
-        postAdapter = PostAdapter(mutableListOf()) { post ->
-            val intent = Intent(requireContext(), PostDetailActivity::class.java)
-            intent.putExtra("POST_ID", post.id)
-            startActivity(intent)
-        }
+        postAdapter = PostAdapter(
+            mutableListOf(),
+            onItemClick = { post ->
+                val intent = Intent(requireContext(), PostDetailActivity::class.java)
+                intent.putExtra("POST_ID", post.id)
+                startActivity(intent)
+            },
+            onReviewClick = { post ->
+                Log.d("HomeFragment", "Review click on post: ${post.id}")
+            }
+        )
         recyclerViewPosts.layoutManager = LinearLayoutManager(requireContext())
         recyclerViewPosts.adapter = postAdapter
     }
@@ -204,9 +210,20 @@ class HomeFragment : Fragment() {
         for (b in bounds) {
             var q: Query = firestore.collection("posts")
 
-            if (currentFilterStatus != "all") {
-                q = q.whereEqualTo("status", currentFilterStatus)
+            // [수정] 필터 상태에 따라 쿼리를 다르게 구성합니다.
+            when (currentFilterStatus) {
+                "모집중" -> {
+                    q = q.whereEqualTo("status", "모집중")
+                }
+                "모집완료" -> {
+                    q = q.whereEqualTo("status", "모집완료")
+                }
+                "all" -> {
+                    // '전체'를 눌렀을 때는 '모집중'과 '모집완료'만 포함시킵니다.
+                    q = q.whereIn("status", listOf("모집중", "모집완료"))
+                }
             }
+
             if (currentFilterCategory != "all") {
                 q = q.whereEqualTo("category", currentFilterCategory)
             }

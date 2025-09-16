@@ -7,11 +7,12 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bergi.nbang_v1.PostAdapter
-import com.bergi.nbang_v1.data.Post // Post 데이터 클래스 임포트
+import com.bergi.nbang_v1.data.Post
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
@@ -23,11 +24,23 @@ class CompletedPostsFragment : Fragment() {
         val recyclerView: RecyclerView = view.findViewById(R.id.recyclerViewPostList)
         val emptyTextView: TextView = view.findViewById(R.id.textViewEmptyList)
 
-        val postAdapter = PostAdapter(mutableListOf()) { post ->
-            val intent = Intent(requireContext(), PostDetailActivity::class.java)
-            intent.putExtra("POST_ID", post.id)
-            startActivity(intent)
-        }
+        // [수정] PostAdapter 생성 시 onReviewClick 람다 함수 추가
+        val postAdapter = PostAdapter(
+            mutableListOf(),
+            onItemClick = { post ->
+                // 기존 아이템 클릭 시 상세 화면으로 이동
+                val intent = Intent(requireContext(), PostDetailActivity::class.java)
+                intent.putExtra("POST_ID", post.id)
+                startActivity(intent)
+            },
+            onReviewClick = { post ->
+                val intent = Intent(requireContext(), SelectRevieweeActivity::class.java)
+                // 참여자 UID 목록을 ArrayList 형태로 변환하여 전달
+                intent.putStringArrayListExtra("PARTICIPANT_UIDS", ArrayList(post.participants))
+                intent.putExtra("CREATOR_UID", post.creatorUid)
+                startActivity(intent)
+            }
+        )
         recyclerView.layoutManager = LinearLayoutManager(context)
         recyclerView.adapter = postAdapter
 
@@ -35,7 +48,7 @@ class CompletedPostsFragment : Fragment() {
         if (currentUser != null) {
             FirebaseFirestore.getInstance().collection("posts")
                 .whereArrayContains("participants", currentUser.uid)
-                .whereEqualTo("status", "모집완료")
+                .whereEqualTo("status", "거래완료")
                 .orderBy("timestamp", Query.Direction.DESCENDING)
                 .addSnapshotListener { snapshots, error ->
                     if (error != null) {

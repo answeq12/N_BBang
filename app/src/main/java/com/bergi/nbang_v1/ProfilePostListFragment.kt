@@ -9,6 +9,7 @@ import android.widget.TextView
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.bergi.nbang_v1.PostAdapter
 import com.bergi.nbang_v1.data.Post
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
@@ -48,11 +49,18 @@ class ProfilePostListFragment : Fragment() {
     }
 
     private fun setupRecyclerView() {
-        postAdapter = PostAdapter(mutableListOf()) { post ->
-            val intent = Intent(requireContext(), PostDetailActivity::class.java)
-            intent.putExtra("POST_ID", post.id)
-            startActivity(intent)
-        }
+        // [수정] 변경된 PostAdapter 생성자를 사용합니다.
+        postAdapter = PostAdapter(
+            mutableListOf(),
+            onItemClick = { post ->
+                val intent = Intent(requireContext(), PostDetailActivity::class.java)
+                intent.putExtra("POST_ID", post.id)
+                startActivity(intent)
+            },
+            onReviewClick = {
+                // 프로필의 게시글 목록에서는 후기 작성 기능이 필요 없으므로 비워둡니다.
+            }
+        )
         recyclerView.layoutManager = LinearLayoutManager(context)
         recyclerView.adapter = postAdapter
     }
@@ -83,7 +91,6 @@ class ProfilePostListFragment : Fragment() {
             }
 
             val posts = snapshots.toObjects(Post::class.java).mapIndexedNotNull { index, post ->
-                // For "participated" list, filter out posts created by the user themselves
                 if (listType == "participated" && post.creatorUid == userId) {
                     null
                 } else {
