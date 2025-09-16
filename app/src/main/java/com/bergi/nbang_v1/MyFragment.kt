@@ -93,15 +93,19 @@ class MyFragment : Fragment() {
             .get()
             .addOnSuccessListener { documents ->
                 val reviews = documents.toObjects<Review>()
-                val averageRating = if (reviews.isNotEmpty()) {
+                val averageRatingFiveScale = if (reviews.isNotEmpty()) {
                     reviews.sumOf { it.rating.toDouble() } / reviews.size
                 } else {
-                    5.0 // 후기 없으면 5.0점
+                    2.5 // << 후기 없을 때 5점 만점 기준 2.5점으로 설정 (10점 만점 기준 5.0점이 됨)
                 }
 
-                val progressPercentage = (averageRating / 10.0 * 100).toInt()
+                // 0-5점 스케일의 평균을 0-10점 스케일로 변환
+                val averageRatingTenScale = averageRatingFiveScale * 2.0
 
-                mannerScoreTextView.text = "%.1f점".format(averageRating)
+                // ProgressBar는 0-5점 평균을 기준으로 100%를 채우도록 설정
+                val progressPercentage = (averageRatingFiveScale / 5.0 * 100).toInt() // 2.5점일 경우 50%
+
+                mannerScoreTextView.text = "%.1f점".format(averageRatingTenScale) // 10점 만점 기준으로 텍스트 표시
                 mannerScoreProgressBar.progress = progressPercentage
             }
     }
