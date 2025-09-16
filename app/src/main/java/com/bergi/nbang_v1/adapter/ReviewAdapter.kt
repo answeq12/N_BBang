@@ -26,7 +26,7 @@ class ReviewAdapter(private val reviews: MutableList<Review>) :
 
     override fun onBindViewHolder(holder: ReviewViewHolder, position: Int) {
         val review = reviews[position]
-        holder.ratingBar.rating = review.rating / 2.0f // 10점 만점을 5점 만점으로 변환
+        holder.ratingBar.rating = review.rating
         holder.commentTextView.text = review.comment
         // TODO: 후기 작성자 UID를 이용해 닉네임 가져와서 표시
     }
