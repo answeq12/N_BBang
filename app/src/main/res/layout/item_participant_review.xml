@@ -14,8 +14,9 @@
         android:textAppearance="?attr/textAppearanceBody1"
         android:text="참여자 닉네임" />
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/buttonWriteReviewForParticipant"
+        style = "@style/YellowContainedButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="후기 남기기" />

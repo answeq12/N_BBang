@@ -90,12 +90,16 @@
         <activity
             android:name=".ReceivedReviewsActivity"
             android:exported="false" />
+
         <activity
             android:name=".MapDetailActivity"
             android:exported="false" />
 
         <activity
             android:name=".SelectRevieweeActivity"
+            android:exported="false"/>
+        <activity
+            android:name=".ReviewActivity"
             android:exported="false" />
 
         <meta-data

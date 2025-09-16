@@ -52,7 +52,7 @@ class MyFragment : Fragment() {
         certifyLocationButton = view.findViewById(R.id.buttonCertifyLocation)
         keywordAlarmCard = view.findViewById(R.id.cardKeywordAlarm)
         mannerScoreTextView = view.findViewById(R.id.textViewMannerScore)
-        mannerScoreProgressBar = view.findViewById(R.id.progressBarMannerScore)
+        mannerScoreProgressBar = view.findViewById(R.id.progressBarManner)
         receivedReviewsCard = view.findViewById(R.id.cardReceivedReviews)
     }
 
