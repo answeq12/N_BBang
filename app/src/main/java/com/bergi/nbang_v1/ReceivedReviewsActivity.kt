@@ -40,7 +40,7 @@ class ReceivedReviewsActivity : BaseActivity() {
 
         FirebaseFirestore.getInstance().collection("reviews")
             .whereEqualTo("reviewedUserUid", myUid)
-            .orderBy("timestamp", Query.Direction.DESCENDING)
+            .orderBy("createdAt", Query.Direction.DESCENDING)
             .get()
             .addOnSuccessListener { documents ->
                 val reviews = documents.toObjects<Review>()

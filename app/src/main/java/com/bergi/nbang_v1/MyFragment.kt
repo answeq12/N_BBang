@@ -79,7 +79,10 @@ class MyFragment : Fragment() {
         // 받은 후기 버튼을 눌렀을 때의 동작을 추가합니다.
         // ReceivedReviewsActivity는 미리 만들어두어야 합니다.
         receivedReviewsCard.setOnClickListener {
-            startActivity(Intent(requireContext(), ReceivedReviewsActivity::class.java))
+            val intent = Intent(requireContext(), ReceivedReviewsActivity::class.java)
+            // 현재 로그인한 사용자의 UID를 "USER_ID"라는 이름으로 Intent에 추가
+            intent.putExtra("USER_ID", user?.uid)
+            startActivity(intent)
         }
     }
 
