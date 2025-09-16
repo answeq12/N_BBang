@@ -73,7 +73,6 @@ class UserProfileActivity : BaseActivity() {
         val userDocRef = firestore.collection("users").document(userId!!)
         val reviewsTask = firestore.collection("reviews").whereEqualTo("reviewedUserUid", userId).get()
 
-        // [수정] 사용자 정보와 후기 정보만 불러오도록 변경
         Tasks.whenAllSuccess<Any>(userDocRef.get(), reviewsTask).addOnSuccessListener { results ->
             (results[0] as? DocumentSnapshot)?.let { userDoc ->
                 val nickname = userDoc.getString("nickname") ?: "알 수 없는 사용자"
@@ -81,16 +80,43 @@ class UserProfileActivity : BaseActivity() {
                 supportActionBar?.title = "$nickname 님의 프로필"
             }
 
-            (results[1] as? com.google.firebase.firestore.QuerySnapshot)?.let {
-                val reviews = it.toObjects<Review>()
-                val averageRating = if (reviews.isNotEmpty()) reviews.sumOf { r -> r.rating.toDouble() } / reviews.size else 5.0
-                val progressPercentage = (averageRating / 10.0 * 100).toInt()
+            (results[1] as? com.google.firebase.firestore.QuerySnapshot)?.let { querySnapshot ->
+                val reviews = querySnapshot.toObjects<Review>()
+                Log.d(TAG, "Fetched ${reviews.size} review documents for user: $userId")
 
-                mannerScoreTextView.text = "%.1f점".format(averageRating)
+                // --- 여기부터 매너점수 계산 로직 수정 (MyFragment와 동일하게) ---
+                val initialDefaultScoreFiveScale = 2.5 // 5점 만점 기준 초기 점수
+                val sumOfActualRatingsFiveScale = reviews.sumOf { it.rating.toDouble() } // review.rating이 5점 만점 기준이라고 가정
+                val numberOfActualReviews = reviews.size
+
+                Log.d(TAG, "Initial default score (5-scale): $initialDefaultScoreFiveScale for user: $userId")
+                Log.d(TAG, "Sum of actual ratings (5-scale): $sumOfActualRatingsFiveScale, Number of actual reviews: $numberOfActualReviews for user: $userId")
+
+                // 전체 합계 (5점 만점 기준): 실제 리뷰 점수 합계 + 초기 기본 점수
+                val totalSumForAverageFiveScale = sumOfActualRatingsFiveScale + initialDefaultScoreFiveScale
+                // 전체 개수: 실제 리뷰 개수 + 초기 기본 점수 1개
+                val totalCountForAverage = numberOfActualReviews + 1 
+
+                Log.d(TAG, "Total sum for average calculation (5-scale): $totalSumForAverageFiveScale for user: $userId")
+                Log.d(TAG, "Total count for average calculation: $totalCountForAverage for user: $userId")
+
+                val averageRatingFiveScale = totalSumForAverageFiveScale / totalCountForAverage
+                Log.d(TAG, "Final averageRatingFiveScale: $averageRatingFiveScale for user: $userId")
+
+                val averageRatingTenScale = averageRatingFiveScale * 2.0 // 10점 만점으로 변환
+                // --- 여기까지 매너점수 계산 로직 수정 ---
+
+                Log.d(TAG, "Final averageRatingTenScale: $averageRatingTenScale for user: $userId")
+
+                val progressPercentage = (averageRatingFiveScale / 5.0 * 100).toInt() // ProgressBar는 5점 만점 기준으로 계산
+                Log.d(TAG, "Final progressPercentage: $progressPercentage for user: $userId")
+
+                mannerScoreTextView.text = "%.1f점".format(averageRatingTenScale)
                 mannerScoreProgressBar.progress = progressPercentage
             }
         }.addOnFailureListener { e ->
             Log.e(TAG, "프로필 정보 로딩 실패", e)
+            // 오류 발생 시 UI 처리 (예: mannerScoreTextView.text = "오류")
         }
     }
 
