@@ -59,8 +59,7 @@ class MainActivity : AppCompatActivity() {
         transaction.commit()
     }
 
-    // --- 이 함수를 새로 추가합니다 ---
-    // MyFragment에서 호출할 프로필 화면 전환 함수
+
     fun navigateToProfileFragment() {
         val transaction = supportFragmentManager.beginTransaction()
         // 애니메이션과 함께 ProfileFragment로 교체

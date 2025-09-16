@@ -153,17 +153,25 @@ class ChatRoomActivity : AppCompatActivity() {
         }
     }
 
-    // [신규] '거래 완료' 로직
     private fun onCompleteDealClicked() {
         val myUid = auth.currentUser?.uid ?: return
         val roomRef = firestore.collection("chatRooms").document(chatRoomId!!)
+        val postRef = firestore.collection("posts").document(chatRoomId!!) // [추가] 게시글 참조
 
         roomRef.update("completionStatus.$myUid", true).addOnSuccessListener {
             roomRef.get().addOnSuccessListener { document ->
-                val completionStatus = document.get("completionStatus") as? Map<String, Boolean>
-                if (completionStatus != null && completionStatus.values.all { it }) {
+                val chatRoom = document.toObject(ChatRoom::class.java)
+                val completionStatus = chatRoom?.completionStatus
+                val allParticipants = chatRoom?.participants
+
+                val allCompleted = allParticipants?.all { uid -> completionStatus?.get(uid) == true } ?: false
+
+                if (allCompleted) {
                     roomRef.update("isDealFullyCompleted", true)
-                        .addOnSuccessListener { Toast.makeText(this, "모든 참여자가 거래를 완료했습니다!", Toast.LENGTH_SHORT).show() }
+                    postRef.update("status", "거래완료")
+                        .addOnSuccessListener {
+                            Toast.makeText(this, "모든 참여자가 거래를 완료했습니다!", Toast.LENGTH_SHORT).show()
+                        }
                 } else {
                     Toast.makeText(this, "거래 완료에 동의했습니다.", Toast.LENGTH_SHORT).show()
                 }

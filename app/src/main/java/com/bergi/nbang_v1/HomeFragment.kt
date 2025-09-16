@@ -238,7 +238,8 @@ class HomeFragment : Fragment() {
                 if (!currentSearchQuery.isNullOrEmpty()) {
                     matchingPosts = matchingPosts.filter { post ->
                         post.keywords.any { keyword -> keyword.contains(currentSearchQuery!!, ignoreCase = true) } ||
-                                post.title.contains(currentSearchQuery!!, ignoreCase = true)
+                                post.title.contains(currentSearchQuery!!, ignoreCase = true)||
+                                post.content.contains(currentSearchQuery!!, ignoreCase = true)
                     }.toMutableList()
                 }
 
